@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyA5T_rRZN-NQ2OnYQ_n_0bMie5Ep0wSUMA</string>
+	<key>GCM_SENDER_ID</key>
+	<string>699399530829</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.jaisachdeva.carecompanion</string>
+	<key>PROJECT_ID</key>
+	<string>care-companion-43428</string>
+	<key>STORAGE_BUCKET</key>
+	<string>care-companion-43428.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:699399530829:ios:02145ac4cc108cc0f02f04</string>
+</dict>
+</plist>
