@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/login_screen.dart';
-import 'screens/signup_screen.dart';
-import 'screens/home_screen.dart';
+import 'screens/auth_gate.dart';
 
 class CareCompanionApp extends StatelessWidget {
   const CareCompanionApp({super.key});
@@ -12,15 +10,10 @@ class CareCompanionApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Care Companion',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
         useMaterial3: true,
+        colorSchemeSeed: Colors.teal,
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const LoginScreen(),
-        '/signup': (context) => const SignupScreen(),
-        '/home': (context) => const HomeScreen(),
-      },
+      home: const AuthGate(),
     );
   }
 }
