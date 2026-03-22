@@ -7,6 +7,8 @@ import 'login_screen.dart';
 import 'edit_health_info_screen.dart';
 import 'medication_list_screen.dart'; 
 import '../services/notification_service.dart';
+import 'emergency_services_screen.dart';
+
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -59,6 +61,22 @@ class HomeScreen extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                   },
+                ),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.emergency),
+                    title: const Text('Emergency Services'),
+                    subtitle: const Text('Find nearby hospital, ER, clinic, and pharmacy'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                    MaterialPageRoute(
+                          builder: (context) => const EmergencyServicesScreen(),
+                        ),
+                      );
+                    },
+                  ),
                 ),
 
                 // PROFILE
