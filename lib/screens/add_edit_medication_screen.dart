@@ -110,11 +110,18 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
     }
   }
 
-  Widget buildField(TextEditingController controller, String label) {
+  Widget buildField(
+    TextEditingController controller,
+    String label, {
+    String? hint,
+    int maxLines = 1,
+    IconData? icon,
+  }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 16),
       child: TextFormField(
         controller: controller,
+        maxLines: maxLines,
         validator: (value) {
           if ((label == 'Medication Name' || label == 'Dosage') &&
               (value == null || value.trim().isEmpty)) {
@@ -124,7 +131,11 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
         },
         decoration: InputDecoration(
           labelText: label,
-          border: const OutlineInputBorder(),
+          hintText: hint,
+          prefixIcon: icon != null ? Icon(icon) : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       ),
     );
@@ -147,38 +158,102 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(isEditing ? 'Edit Medication' : 'Add Medication'),
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
-              buildField(nameController, 'Medication Name'),
-              buildField(dosageController, 'Dosage'),
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.teal.shade50,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.medication, size: 34, color: Colors.teal),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        isEditing
+                            ? 'Update medication details and reminder times.'
+                            : 'Add a medication and set reminder times.',
+                        style: const TextStyle(fontSize: 15),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              buildField(
+                nameController,
+                'Medication Name',
+                icon: Icons.badge_outlined,
+              ),
+              buildField(
+                dosageController,
+                'Dosage',
+                hint: 'e.g. 1 pill, 5 ml, 500 mg',
+                icon: Icons.science_outlined,
+              ),
               buildField(
                 scheduleTimesController,
-                'Schedule Times (comma separated, e.g. 08:00, 20:00)',
+                'Schedule Times',
+                hint: 'e.g. 08:00, 20:00',
+                icon: Icons.access_time,
               ),
-              buildField(notesController, 'Notes'),
-              buildField(refillDateController, 'Refill Date (YYYY-MM-DD)'),
-              SwitchListTile(
-                title: const Text('Active'),
-                value: isActive,
-                onChanged: (value) {
-                  setState(() {
-                    isActive = value;
-                  });
-                },
+              buildField(
+                notesController,
+                'Notes',
+                hint: 'Optional notes',
+                maxLines: 3,
+                icon: Icons.notes,
               ),
-              const SizedBox(height: 16),
+              buildField(
+                refillDateController,
+                'Refill Date',
+                hint: 'YYYY-MM-DD',
+                icon: Icons.calendar_today_outlined,
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: SwitchListTile(
+                  title: const Text(
+                    'Active medication',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: const Text('Enable reminders for this medication'),
+                  value: isActive,
+                  onChanged: (value) {
+                    setState(() {
+                      isActive = value;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
+                height: 54,
                 child: ElevatedButton(
                   onPressed: isSaving ? null : saveMedication,
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
                   child: isSaving
                       ? const CircularProgressIndicator()
-                      : Text(isEditing ? 'Save Changes' : 'Add Medication'),
+                      : Text(
+                          isEditing ? 'Save Changes' : 'Add Medication',
+                          style: const TextStyle(fontSize: 16),
+                        ),
                 ),
               ),
             ],
