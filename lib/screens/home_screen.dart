@@ -1,71 +1,132 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
+import '../services/firestore_service.dart';
+import 'edit_profile_screen.dart';
+import 'login_screen.dart';
+import 'edit_health_info_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  Widget dashboardCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    return Card(
-      child: ListTile(
-        leading: Icon(icon, color: Colors.teal, size: 32),
-        title: Text(title),
-        subtitle: Text(subtitle),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Care Companion'),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.pushReplacementNamed(context, '/');
-            },
-            icon: const Icon(Icons.logout),
+    final user = FirebaseAuth.instance.currentUser!;
+    final authService = AuthService();
+
+    return StreamBuilder(
+      stream: FirestoreService().getUserStream(user.uid),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data?.data() == null) {
+          return const Scaffold(
+            body: Center(child: Text('No user data found')),
+          );
+        }
+
+        final userData = snapshot.data!.data()!;
+        final fullName = userData['fullName'] ?? '';
+        final role = userData['role'] ?? 'senior';
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Care Companion'),
           ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const Text(
-            'Welcome Back!',
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+          drawer: Drawer(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                UserAccountsDrawerHeader(
+                  accountName: Text(fullName.isEmpty ? 'User' : fullName),
+                  accountEmail: Text(user.email ?? ''),
+                  currentAccountPicture: const CircleAvatar(
+                    child: Icon(Icons.person, size: 32),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.home),
+                  title: const Text('Home'),
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.edit),
+                  title: const Text('Update My Info'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const EditProfileScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.health_and_safety),
+                  title: const Text('Update Health Info'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const EditHealthInfoScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.logout),
+                  title: const Text('Log Out'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await authService.logout();
+
+                    if (!context.mounted) return;
+
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      (route) => false,
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
-          dashboardCard(
-            icon: Icons.medication,
-            title: 'Medication Reminders',
-            subtitle: 'Track and manage daily medications',
+          body: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Welcome $fullName',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Role: $role',
+                  style: const TextStyle(fontSize: 18),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Your care dashboard is ready.',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
           ),
-          dashboardCard(
-            icon: Icons.monitor_heart,
-            title: 'Vitals Logging',
-            subtitle: 'Record blood pressure, sugar, heart rate, and weight',
-          ),
-          dashboardCard(
-            icon: Icons.mood,
-            title: 'Mood Check-In',
-            subtitle: 'Log daily mood and emotional wellbeing',
-          ),
-          dashboardCard(
-            icon: Icons.warning,
-            title: 'Emergency SOS',
-            subtitle: 'Quickly contact help in emergencies',
-          ),
-          dashboardCard(
-            icon: Icons.people,
-            title: 'Caregiver Dashboard',
-            subtitle: 'Keep family and caregivers informed',
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

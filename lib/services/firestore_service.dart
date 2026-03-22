@@ -158,4 +158,28 @@ class FirestoreService {
     'questionnaireCompleted': true,
   });
 }
+Future<void> updateHealthInfo({
+  required String uid,
+  required String preferredName,
+  required String age,
+  required List<String> healthConditions,
+  required List<String> allergies,
+  required List<String> medications,
+  required String mobilityNeeds,
+  required String inputPreference,
+  required bool voiceAssistantEnabled,
+  required bool largeTextEnabled,
+}) async {
+  await _db.collection('users').doc(uid).update({
+    'preferredName': preferredName,
+    'age': age,
+    'healthConditions': healthConditions,
+    'allergies': allergies,
+    'medications': medications,
+    'mobilityNeeds': mobilityNeeds,
+    'inputPreference': inputPreference,
+    'voiceAssistantEnabled': voiceAssistantEnabled,
+    'largeTextEnabled': largeTextEnabled,
+  });
+}
 }

@@ -11,6 +11,17 @@ class AppUser {
   final String? linkedCaregiverUid;
   final String? linkedSeniorUid;
 
+  final String preferredName;
+  final String age;
+  final List<String> healthConditions;
+  final List<String> allergies;
+  final List<String> medications;
+  final String mobilityNeeds;
+  final String inputPreference;
+  final bool voiceAssistantEnabled;
+  final bool largeTextEnabled;
+  final bool questionnaireCompleted;
+
   AppUser({
     required this.uid,
     required this.email,
@@ -23,6 +34,16 @@ class AppUser {
     required this.profileCompleted,
     this.linkedCaregiverUid,
     this.linkedSeniorUid,
+    required this.preferredName,
+    required this.age,
+    required this.healthConditions,
+    required this.allergies,
+    required this.medications,
+    required this.mobilityNeeds,
+    required this.inputPreference,
+    required this.voiceAssistantEnabled,
+    required this.largeTextEnabled,
+    required this.questionnaireCompleted,
   });
 
   factory AppUser.fromMap(Map<String, dynamic> map) {
@@ -39,6 +60,16 @@ class AppUser {
       profileCompleted: map['profileCompleted'] ?? false,
       linkedCaregiverUid: map['linkedCaregiverUid'],
       linkedSeniorUid: map['linkedSeniorUid'],
+      preferredName: map['preferredName'] ?? '',
+      age: map['age'] ?? '',
+      healthConditions: List<String>.from(map['healthConditions'] ?? []),
+      allergies: List<String>.from(map['allergies'] ?? []),
+      medications: List<String>.from(map['medications'] ?? []),
+      mobilityNeeds: map['mobilityNeeds'] ?? '',
+      inputPreference: map['inputPreference'] ?? '',
+      voiceAssistantEnabled: map['voiceAssistantEnabled'] ?? false,
+      largeTextEnabled: map['largeTextEnabled'] ?? false,
+      questionnaireCompleted: map['questionnaireCompleted'] ?? false,
     );
   }
 
@@ -55,6 +86,16 @@ class AppUser {
       'profileCompleted': profileCompleted,
       'linkedCaregiverUid': linkedCaregiverUid,
       'linkedSeniorUid': linkedSeniorUid,
+      'preferredName': preferredName,
+      'age': age,
+      'healthConditions': healthConditions,
+      'allergies': allergies,
+      'medications': medications,
+      'mobilityNeeds': mobilityNeeds,
+      'inputPreference': inputPreference,
+      'voiceAssistantEnabled': voiceAssistantEnabled,
+      'largeTextEnabled': largeTextEnabled,
+      'questionnaireCompleted': questionnaireCompleted,
     };
   }
 }

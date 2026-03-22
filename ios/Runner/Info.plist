@@ -66,5 +66,10 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Care Companion uses the microphone so you can answer questions by voice.</string>
+
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Care Companion uses speech recognition to understand your spoken answers.</string>
 </dict>
 </plist>
