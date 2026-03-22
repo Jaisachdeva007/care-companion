@@ -5,6 +5,8 @@ import '../services/firestore_service.dart';
 import 'edit_profile_screen.dart';
 import 'login_screen.dart';
 import 'edit_health_info_screen.dart';
+import 'medication_list_screen.dart'; 
+import '../services/notification_service.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -37,6 +39,7 @@ class HomeScreen extends StatelessWidget {
           appBar: AppBar(
             title: const Text('Care Companion'),
           ),
+
           drawer: Drawer(
             child: ListView(
               padding: EdgeInsets.zero,
@@ -48,6 +51,8 @@ class HomeScreen extends StatelessWidget {
                     child: Icon(Icons.person, size: 32),
                   ),
                 ),
+
+                // HOME
                 ListTile(
                   leading: const Icon(Icons.home),
                   title: const Text('Home'),
@@ -55,6 +60,8 @@ class HomeScreen extends StatelessWidget {
                     Navigator.pop(context);
                   },
                 ),
+
+                // PROFILE
                 ListTile(
                   leading: const Icon(Icons.edit),
                   title: const Text('Update My Info'),
@@ -68,6 +75,8 @@ class HomeScreen extends StatelessWidget {
                     );
                   },
                 ),
+
+                // HEALTH INFO
                 ListTile(
                   leading: const Icon(Icons.health_and_safety),
                   title: const Text('Update Health Info'),
@@ -81,6 +90,25 @@ class HomeScreen extends StatelessWidget {
                     );
                   },
                 ),
+
+                // ✅ NEW: MEDICATIONS
+                ListTile(
+                  leading: const Icon(Icons.medication),
+                  title: const Text('Medications'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const MedicationListScreen(),
+                      ),
+                    );
+                  },
+                ),
+
+                const Divider(),
+
+                // LOGOUT
                 ListTile(
                   leading: const Icon(Icons.logout),
                   title: const Text('Log Out'),
@@ -92,7 +120,9 @@ class HomeScreen extends StatelessWidget {
 
                     Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => const LoginScreen(),
+                      ),
                       (route) => false,
                     );
                   },
@@ -100,6 +130,8 @@ class HomeScreen extends StatelessWidget {
               ],
             ),
           ),
+
+          // BODY
           body: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -121,7 +153,10 @@ class HomeScreen extends StatelessWidget {
                 const Text(
                   'Your care dashboard is ready.',
                   style: TextStyle(fontSize: 16),
+                  
                 ),
+                const SizedBox(height: 20),
+                
               ],
             ),
           ),

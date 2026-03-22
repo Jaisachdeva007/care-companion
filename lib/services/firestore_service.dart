@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/app_user.dart';
+import '../models/medication.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -180,6 +181,91 @@ Future<void> updateHealthInfo({
     'inputPreference': inputPreference,
     'voiceAssistantEnabled': voiceAssistantEnabled,
     'largeTextEnabled': largeTextEnabled,
+  });
+}
+Stream<List<Medication>> getMedicationsStream(String uid) {
+  return _db
+      .collection('users')
+      .doc(uid)
+      .collection('medications')
+      .orderBy('name')
+      .snapshots()
+      .map(
+        (snapshot) => snapshot.docs
+            .map((doc) => Medication.fromMap(doc.id, doc.data()))
+            .toList(),
+      );
+}
+
+Future<void> addMedication({
+  required String uid,
+  required Medication medication,
+}) async {
+  await _db
+      .collection('users')
+      .doc(uid)
+      .collection('medications')
+      .add(medication.toMap());
+}
+
+Future<void> updateMedication({
+  required String uid,
+  required Medication medication,
+}) async {
+  await _db
+      .collection('users')
+      .doc(uid)
+      .collection('medications')
+      .doc(medication.id)
+      .update(medication.toMap());
+}
+
+Future<void> deleteMedication({
+  required String uid,
+  required String medicationId,
+}) async {
+  await _db
+      .collection('users')
+      .doc(uid)
+      .collection('medications')
+      .doc(medicationId)
+      .delete();
+}
+
+Future<Medication?> getMedicationById({
+  required String uid,
+  required String medicationId,
+}) async {
+  final doc = await _db
+      .collection('users')
+      .doc(uid)
+      .collection('medications')
+      .doc(medicationId)
+      .get();
+
+  if (!doc.exists || doc.data() == null) return null;
+  return Medication.fromMap(doc.id, doc.data()!);
+}
+
+Future<void> addMedicationLog({
+  required String uid,
+  required String medicationId,
+  required MedicationLog log,
+}) async {
+  final docRef = _db
+      .collection('users')
+      .doc(uid)
+      .collection('medications')
+      .doc(medicationId);
+
+  final doc = await docRef.get();
+  if (!doc.exists || doc.data() == null) return;
+
+  final medication = Medication.fromMap(doc.id, doc.data()!);
+  final updatedLogs = [...medication.logs, log];
+
+  await docRef.update({
+    'logs': updatedLogs.map((e) => e.toMap()).toList(),
   });
 }
 }
