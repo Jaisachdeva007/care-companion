@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../services/firestore_service.dart';
@@ -14,6 +15,8 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
 
   final preferredNameController = TextEditingController();
   final ageController = TextEditingController();
+  final bloodGroupController = TextEditingController();
+  final importantInfoController = TextEditingController();
   final conditionsController = TextEditingController();
   final allergiesController = TextEditingController();
   final medicationsController = TextEditingController();
@@ -36,33 +39,35 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
       final appUser = await FirestoreService().getUserByUid(user.uid);
 
       if (appUser != null) {
-        preferredNameController.text = appUser.toMap()['preferredName'] ?? '';
-        ageController.text = appUser.toMap()['age'] ?? '';
+        final data = appUser.toMap();
+
+        preferredNameController.text = data['preferredName'] ?? '';
+        ageController.text = data['age'] ?? '';
+        bloodGroupController.text = data['bloodGroup'] ?? '';
+        importantInfoController.text = data['importantInfo'] ?? '';
 
         final healthConditions =
-            List<String>.from(appUser.toMap()['healthConditions'] ?? []);
-        final allergies =
-            List<String>.from(appUser.toMap()['allergies'] ?? []);
-        final medications =
-            List<String>.from(appUser.toMap()['medications'] ?? []);
+            List<String>.from(data['healthConditions'] ?? []);
+        final allergies = List<String>.from(data['allergies'] ?? []);
+        final medications = List<String>.from(data['medications'] ?? []);
 
         conditionsController.text = healthConditions.join(', ');
         allergiesController.text = allergies.join(', ');
         medicationsController.text = medications.join(', ');
-        mobilityNeedsController.text =
-            appUser.toMap()['mobilityNeeds'] ?? '';
+        mobilityNeedsController.text = data['mobilityNeeds'] ?? '';
 
-        inputPreference = appUser.toMap()['inputPreference'] ?? 'manual';
-        voiceAssistantEnabled =
-            appUser.toMap()['voiceAssistantEnabled'] ?? false;
-        largeTextEnabled = appUser.toMap()['largeTextEnabled'] ?? false;
+        inputPreference = data['inputPreference'] ?? 'manual';
+        voiceAssistantEnabled = data['voiceAssistantEnabled'] ?? false;
+        largeTextEnabled = data['largeTextEnabled'] ?? false;
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Could not load health info: $e')),
       );
     }
 
+    if (!mounted) return;
     setState(() {
       isLoading = false;
     });
@@ -74,30 +79,32 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
     try {
       final user = FirebaseAuth.instance.currentUser!;
 
-      await FirestoreService().updateHealthInfo(
-        uid: user.uid,
-        preferredName: preferredNameController.text.trim(),
-        age: ageController.text.trim(),
-        healthConditions: conditionsController.text
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'preferredName': preferredNameController.text.trim(),
+        'age': ageController.text.trim(),
+        'bloodGroup': bloodGroupController.text.trim(),
+        'importantInfo': importantInfoController.text.trim(),
+        'healthConditions': conditionsController.text
             .split(',')
             .map((e) => e.trim())
             .where((e) => e.isNotEmpty)
             .toList(),
-        allergies: allergiesController.text
+        'allergies': allergiesController.text
             .split(',')
             .map((e) => e.trim())
             .where((e) => e.isNotEmpty)
             .toList(),
-        medications: medicationsController.text
+        'medications': medicationsController.text
             .split(',')
             .map((e) => e.trim())
             .where((e) => e.isNotEmpty)
             .toList(),
-        mobilityNeeds: mobilityNeedsController.text.trim(),
-        inputPreference: inputPreference,
-        voiceAssistantEnabled: voiceAssistantEnabled,
-        largeTextEnabled: largeTextEnabled,
-      );
+        'mobilityNeeds': mobilityNeedsController.text.trim(),
+        'inputPreference': inputPreference,
+        'voiceAssistantEnabled': voiceAssistantEnabled,
+        'largeTextEnabled': largeTextEnabled,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
 
       if (!mounted) return;
 
@@ -107,17 +114,26 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
 
       Navigator.pop(context);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Could not update health info: $e')),
       );
     }
   }
 
-  Widget buildField(TextEditingController controller, String label) {
+  Widget buildField(
+    TextEditingController controller,
+    String label, {
+    String? hintText,
+    int maxLines = 1,
+    TextInputType? keyboardType,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
         controller: controller,
+        maxLines: maxLines,
+        keyboardType: keyboardType,
         validator: (value) {
           if ((label == 'Preferred Name' || label == 'Age') &&
               (value == null || value.trim().isEmpty)) {
@@ -127,6 +143,7 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
         },
         decoration: InputDecoration(
           labelText: label,
+          hintText: hintText,
           border: const OutlineInputBorder(),
         ),
       ),
@@ -137,6 +154,8 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
   void dispose() {
     preferredNameController.dispose();
     ageController.dispose();
+    bloodGroupController.dispose();
+    importantInfoController.dispose();
     conditionsController.dispose();
     allergiesController.dispose();
     medicationsController.dispose();
@@ -163,7 +182,23 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
           child: Column(
             children: [
               buildField(preferredNameController, 'Preferred Name'),
-              buildField(ageController, 'Age'),
+              buildField(
+                ageController,
+                'Age',
+                keyboardType: TextInputType.number,
+              ),
+              buildField(
+                bloodGroupController,
+                'Blood Group',
+                hintText: 'e.g. O+, A-, B+, AB+',
+              ),
+              buildField(
+                importantInfoController,
+                'Important Info',
+                hintText:
+                    'e.g. asthma, diabetes, seizure history, heart condition',
+                maxLines: 3,
+              ),
               buildField(
                 conditionsController,
                 'Health Conditions (comma separated)',
@@ -177,7 +212,6 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
                 'Medications (comma separated)',
               ),
               buildField(mobilityNeedsController, 'Mobility Needs'),
-
               DropdownButtonFormField<String>(
                 initialValue: inputPreference,
                 decoration: const InputDecoration(
@@ -197,9 +231,7 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
                   }
                 },
               ),
-
               const SizedBox(height: 16),
-
               SwitchListTile(
                 title: const Text('Enable Voice Assistant'),
                 value: voiceAssistantEnabled,
@@ -209,7 +241,6 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
                   });
                 },
               ),
-
               SwitchListTile(
                 title: const Text('Enable Large Text'),
                 value: largeTextEnabled,
@@ -219,9 +250,7 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
                   });
                 },
               ),
-
               const SizedBox(height: 20),
-
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

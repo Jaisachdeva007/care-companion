@@ -18,6 +18,12 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
   Medication? medication;
   bool isLoading = true;
 
+  String formatRepeatDays(List<String> days) {
+    if (days.isEmpty) return 'No repeat days set';
+    if (days.length == 7) return 'Every day';
+    return days.join(', ');
+  }
+
   @override
   void initState() {
     super.initState();
@@ -123,7 +129,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -233,7 +239,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -278,6 +284,14 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                     ),
                   );
                 }).toList(),
+              ),
+            ),
+            infoCard(
+              icon: Icons.repeat,
+              title: 'Repeat Days',
+              child: Text(
+                formatRepeatDays(medication!.repeatDays),
+                style: const TextStyle(fontSize: 16),
               ),
             ),
             infoCard(
@@ -336,7 +350,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),

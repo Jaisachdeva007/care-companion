@@ -7,6 +7,12 @@ import 'medication_detail_screen.dart';
 class MedicationListScreen extends StatelessWidget {
   const MedicationListScreen({super.key});
 
+  String formatRepeatDays(List<String> days) {
+    if (days.isEmpty) return 'No repeat days';
+    if (days.length == 7) return 'Every day';
+    return days.join(', ');
+  }
+
   @override
   Widget build(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser!.uid;
@@ -82,7 +88,7 @@ class MedicationListScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
+                        color: Colors.black.withValues(alpha: 0.06),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -154,6 +160,25 @@ class MedicationListScreen extends StatelessWidget {
                                   ),
                                 );
                               }).toList(),
+                            ),
+                            const SizedBox(height: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 7,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.blueGrey.shade50,
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              child: Text(
+                                formatRepeatDays(med.repeatDays),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.blueGrey.shade700,
+                                ),
+                              ),
                             ),
                           ],
                         ),

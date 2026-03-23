@@ -26,9 +26,22 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
   bool isActive = true;
   bool isSaving = false;
 
+  final List<String> allDays = const [
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun',
+  ];
+
+  late List<String> selectedDays;
+
   @override
   void initState() {
     super.initState();
+
     final med = widget.medication;
     if (med != null) {
       nameController.text = med.name;
@@ -39,11 +52,38 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
           ? med.refillDate!.toIso8601String().split('T').first
           : '';
       isActive = med.isActive;
+
+      if (med.repeatDays.isNotEmpty) {
+        selectedDays = List<String>.from(med.repeatDays);
+      } else {
+        selectedDays = List<String>.from(allDays);
+      }
+    } else {
+      selectedDays = List<String>.from(allDays);
     }
+  }
+
+  void toggleDay(String day) {
+    setState(() {
+      if (selectedDays.contains(day)) {
+        if (selectedDays.length > 1) {
+          selectedDays.remove(day);
+        }
+      } else {
+        selectedDays.add(day);
+      }
+    });
   }
 
   Future<void> saveMedication() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (selectedDays.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select at least one repeat day')),
+      );
+      return;
+    }
 
     setState(() {
       isSaving = true;
@@ -67,6 +107,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
         name: nameController.text.trim(),
         dosage: dosageController.text.trim(),
         scheduleTimes: scheduleTimes,
+        repeatDays: selectedDays,
         notes: notesController.text.trim(),
         refillDate: refillDate,
         isActive: isActive,
@@ -141,6 +182,65 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
     );
   }
 
+  Widget buildRepeatDaysSection() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.repeat, color: Colors.teal),
+              SizedBox(width: 8),
+              Text(
+                'Repeat Days',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Choose which days this medication should repeat.',
+            style: TextStyle(color: Colors.black54),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: allDays.map((day) {
+              final isSelected = selectedDays.contains(day);
+              return FilterChip(
+                label: Text(day),
+                selected: isSelected,
+                onSelected: (_) => toggleDay(day),
+                selectedColor: Colors.teal.shade100,
+                checkmarkColor: Colors.teal.shade800,
+                labelStyle: TextStyle(
+                  color: isSelected ? Colors.teal.shade900 : Colors.black87,
+                  fontWeight: FontWeight.w600,
+                ),
+                side: BorderSide(
+                  color: isSelected
+                      ? Colors.teal.shade300
+                      : Colors.grey.shade300,
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
     nameController.dispose();
@@ -179,8 +279,8 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
                     Expanded(
                       child: Text(
                         isEditing
-                            ? 'Update medication details and reminder times.'
-                            : 'Add a medication and set reminder times.',
+                            ? 'Update medication details, reminder times, and repeat schedule.'
+                            : 'Add a medication, set reminder times, and choose repeat days.',
                         style: const TextStyle(fontSize: 15),
                       ),
                     ),
@@ -205,6 +305,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
                 hint: 'e.g. 08:00, 20:00',
                 icon: Icons.access_time,
               ),
+              buildRepeatDaysSection(),
               buildField(
                 notesController,
                 'Notes',
