@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/app_user.dart';
 import '../models/medication.dart';
@@ -34,8 +36,9 @@ class FirestoreService {
       'inputPreference': '',
       'voiceAssistantEnabled': false,
       'largeTextEnabled': false,
-      'linkedCaregiverUid': null,
-      'linkedSeniorUid': null,
+      'linkedCaregiverUids': [],
+      'linkedSeniorUids': [],
+      'caregiverCode': null,
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
@@ -57,6 +60,7 @@ class FirestoreService {
       'address': address,
       'emergencyContacts': emergencyContacts,
       'profileCompleted': true,
+      if (role == 'caregiver') 'questionnaireCompleted': true,
     });
   }
 
@@ -70,202 +74,268 @@ class FirestoreService {
     return AppUser.fromMap(doc.data()!);
   }
 
-  Future<void> sendCaregiverInvite({
-    required String fromUid,
-    required String fromEmail,
-    required String toEmail,
+  Future<List<AppUser>> getUsersByUids(List<String> uids) async {
+    final cleaned = uids.where((e) => e.trim().isNotEmpty).toSet().toList();
+    if (cleaned.isEmpty) return [];
+
+    final users = <AppUser>[];
+
+    for (final uid in cleaned) {
+      final user = await getUserByUid(uid);
+      if (user != null) {
+        users.add(user);
+      }
+    }
+
+    return users;
+  }
+
+  Future<void> saveQuestionnaire({
+    required String uid,
+    required String preferredName,
+    required String age,
+    required List<String> healthConditions,
+    required List<String> allergies,
+    required List<String> medications,
+    required String mobilityNeeds,
+    required String inputPreference,
+    required bool voiceAssistantEnabled,
+    required bool largeTextEnabled,
   }) async {
-    await _db.collection('connection_requests').add({
-      'fromUid': fromUid,
-      'fromEmail': fromEmail,
-      'toEmail': toEmail.trim().toLowerCase(),
-      'status': 'pending',
-      'createdAt': FieldValue.serverTimestamp(),
+    await _db.collection('users').doc(uid).update({
+      'preferredName': preferredName,
+      'age': age,
+      'healthConditions': healthConditions,
+      'allergies': allergies,
+      'medications': medications,
+      'mobilityNeeds': mobilityNeeds,
+      'inputPreference': inputPreference,
+      'voiceAssistantEnabled': voiceAssistantEnabled,
+      'largeTextEnabled': largeTextEnabled,
+      'questionnaireCompleted': true,
     });
   }
 
-  Stream<QuerySnapshot<Map<String, dynamic>>> getPendingInvitesForEmail(
-    String email,
-  ) {
-    return _db
-        .collection('connection_requests')
-        .where('toEmail', isEqualTo: email.trim().toLowerCase())
-        .where('status', isEqualTo: 'pending')
-        .snapshots();
+  Future<void> updateHealthInfo({
+    required String uid,
+    required String preferredName,
+    required String age,
+    required List<String> healthConditions,
+    required List<String> allergies,
+    required List<String> medications,
+    required String mobilityNeeds,
+    required String inputPreference,
+    required bool voiceAssistantEnabled,
+    required bool largeTextEnabled,
+  }) async {
+    await _db.collection('users').doc(uid).update({
+      'preferredName': preferredName,
+      'age': age,
+      'healthConditions': healthConditions,
+      'allergies': allergies,
+      'medications': medications,
+      'mobilityNeeds': mobilityNeeds,
+      'inputPreference': inputPreference,
+      'voiceAssistantEnabled': voiceAssistantEnabled,
+      'largeTextEnabled': largeTextEnabled,
+    });
   }
 
-  Future<void> acceptInvite({
-    required String requestId,
+  String _generateRandomCode({int length = 6}) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    final random = Random();
+
+    return List.generate(
+      length,
+      (_) => chars[random.nextInt(chars.length)],
+    ).join();
+  }
+
+  Future<String> generateCaregiverCode(String seniorUid) async {
+    String code = _generateRandomCode();
+
+    for (int i = 0; i < 5; i++) {
+      final existing = await _db
+          .collection('users')
+          .where('caregiverCode', isEqualTo: code)
+          .limit(1)
+          .get();
+
+      if (existing.docs.isEmpty) {
+        await _db.collection('users').doc(seniorUid).update({
+          'caregiverCode': code,
+        });
+        return code;
+      }
+
+      code = _generateRandomCode();
+    }
+
+    throw Exception('Could not generate a unique caregiver code.');
+  }
+
+  Future<String> linkCaregiverToSenior({
     required String caregiverUid,
+    required String code,
   }) async {
-    final requestDoc =
-        await _db.collection('connection_requests').doc(requestId).get();
+    final cleanedCode = code.trim().toUpperCase();
 
-    if (!requestDoc.exists || requestDoc.data() == null) return;
+    if (cleanedCode.isEmpty) {
+      return 'Please enter a caregiver code.';
+    }
 
-    final data = requestDoc.data()!;
-    final seniorUid = data['fromUid'] as String;
+    final caregiverDoc = await _db.collection('users').doc(caregiverUid).get();
+    if (!caregiverDoc.exists || caregiverDoc.data() == null) {
+      return 'Caregiver account not found.';
+    }
+
+    final caregiverData = caregiverDoc.data()!;
+
+    final caregiverLinkedSeniorUids = List<String>.from(
+      caregiverData['linkedSeniorUids'] ??
+          ((caregiverData['linkedSeniorUid'] != null &&
+                  caregiverData['linkedSeniorUid'].toString().isNotEmpty)
+              ? [caregiverData['linkedSeniorUid'].toString()]
+              : []),
+    );
+
+    final seniorQuery = await _db
+        .collection('users')
+        .where('caregiverCode', isEqualTo: cleanedCode)
+        .where('role', isEqualTo: 'senior')
+        .limit(1)
+        .get();
+
+    if (seniorQuery.docs.isEmpty) {
+      return 'Invalid caregiver code.';
+    }
+
+    final seniorDoc = seniorQuery.docs.first;
+    final seniorUid = seniorDoc.id;
+    final seniorData = seniorDoc.data();
+
+    if (seniorUid == caregiverUid) {
+      return 'You cannot link to your own account.';
+    }
+
+    if (caregiverLinkedSeniorUids.contains(seniorUid)) {
+      return 'You are already linked to this senior.';
+    }
+
+    final seniorLinkedCaregiverUids = List<String>.from(
+      seniorData['linkedCaregiverUids'] ??
+          ((seniorData['linkedCaregiverUid'] != null &&
+                  seniorData['linkedCaregiverUid'].toString().isNotEmpty)
+              ? [seniorData['linkedCaregiverUid'].toString()]
+              : []),
+    );
 
     final batch = _db.batch();
 
-    final seniorRef = _db.collection('users').doc(seniorUid);
-    final caregiverRef = _db.collection('users').doc(caregiverUid);
-    final requestRef = _db.collection('connection_requests').doc(requestId);
-
-    batch.update(seniorRef, {
-      'linkedCaregiverUid': caregiverUid,
-    });
-
-    batch.update(caregiverRef, {
-      'linkedSeniorUid': seniorUid,
+    batch.update(_db.collection('users').doc(caregiverUid), {
+      'linkedSeniorUids': FieldValue.arrayUnion([seniorUid]),
       'role': 'caregiver',
+      'profileCompleted': true,
+      'questionnaireCompleted': true,
     });
 
-    batch.update(requestRef, {
-      'status': 'accepted',
-      'acceptedAt': FieldValue.serverTimestamp(),
-    });
+    if (!seniorLinkedCaregiverUids.contains(caregiverUid)) {
+      batch.update(_db.collection('users').doc(seniorUid), {
+        'linkedCaregiverUids': FieldValue.arrayUnion([caregiverUid]),
+      });
+    }
 
     await batch.commit();
+
+    final seniorName = (seniorData['fullName'] ?? '').toString().trim();
+    return seniorName.isEmpty
+        ? 'Senior linked successfully.'
+        : 'Linked successfully to $seniorName.';
   }
 
-  Future<void> declineInvite(String requestId) async {
-    await _db.collection('connection_requests').doc(requestId).update({
-      'status': 'declined',
+  Stream<List<Medication>> getMedicationsStream(String uid) {
+    return _db
+        .collection('users')
+        .doc(uid)
+        .collection('medications')
+        .orderBy('name')
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => Medication.fromMap(doc.id, doc.data()))
+              .toList(),
+        );
+  }
+
+  Future<void> addMedication({
+    required String uid,
+    required Medication medication,
+  }) async {
+    await _db
+        .collection('users')
+        .doc(uid)
+        .collection('medications')
+        .add(medication.toMap());
+  }
+
+  Future<void> updateMedication({
+    required String uid,
+    required Medication medication,
+  }) async {
+    await _db
+        .collection('users')
+        .doc(uid)
+        .collection('medications')
+        .doc(medication.id)
+        .update(medication.toMap());
+  }
+
+  Future<void> deleteMedication({
+    required String uid,
+    required String medicationId,
+  }) async {
+    await _db
+        .collection('users')
+        .doc(uid)
+        .collection('medications')
+        .doc(medicationId)
+        .delete();
+  }
+
+  Future<Medication?> getMedicationById({
+    required String uid,
+    required String medicationId,
+  }) async {
+    final doc = await _db
+        .collection('users')
+        .doc(uid)
+        .collection('medications')
+        .doc(medicationId)
+        .get();
+
+    if (!doc.exists || doc.data() == null) return null;
+    return Medication.fromMap(doc.id, doc.data()!);
+  }
+
+  Future<void> addMedicationLog({
+    required String uid,
+    required String medicationId,
+    required MedicationLog log,
+  }) async {
+    final docRef = _db
+        .collection('users')
+        .doc(uid)
+        .collection('medications')
+        .doc(medicationId);
+
+    final doc = await docRef.get();
+    if (!doc.exists || doc.data() == null) return;
+
+    final medication = Medication.fromMap(doc.id, doc.data()!);
+    final updatedLogs = [...medication.logs, log];
+
+    await docRef.update({
+      'logs': updatedLogs.map((e) => e.toMap()).toList(),
     });
   }
-  Future<void> saveQuestionnaire({
-  required String uid,
-  required String preferredName,
-  required String age,
-  required List<String> healthConditions,
-  required List<String> allergies,
-  required List<String> medications,
-  required String mobilityNeeds,
-  required String inputPreference,
-  required bool voiceAssistantEnabled,
-  required bool largeTextEnabled,
-}) async {
-  await _db.collection('users').doc(uid).update({
-    'preferredName': preferredName,
-    'age': age,
-    'healthConditions': healthConditions,
-    'allergies': allergies,
-    'medications': medications,
-    'mobilityNeeds': mobilityNeeds,
-    'inputPreference': inputPreference,
-    'voiceAssistantEnabled': voiceAssistantEnabled,
-    'largeTextEnabled': largeTextEnabled,
-    'questionnaireCompleted': true,
-  });
-}
-Future<void> updateHealthInfo({
-  required String uid,
-  required String preferredName,
-  required String age,
-  required List<String> healthConditions,
-  required List<String> allergies,
-  required List<String> medications,
-  required String mobilityNeeds,
-  required String inputPreference,
-  required bool voiceAssistantEnabled,
-  required bool largeTextEnabled,
-}) async {
-  await _db.collection('users').doc(uid).update({
-    'preferredName': preferredName,
-    'age': age,
-    'healthConditions': healthConditions,
-    'allergies': allergies,
-    'medications': medications,
-    'mobilityNeeds': mobilityNeeds,
-    'inputPreference': inputPreference,
-    'voiceAssistantEnabled': voiceAssistantEnabled,
-    'largeTextEnabled': largeTextEnabled,
-  });
-}
-Stream<List<Medication>> getMedicationsStream(String uid) {
-  return _db
-      .collection('users')
-      .doc(uid)
-      .collection('medications')
-      .orderBy('name')
-      .snapshots()
-      .map(
-        (snapshot) => snapshot.docs
-            .map((doc) => Medication.fromMap(doc.id, doc.data()))
-            .toList(),
-      );
-}
-
-Future<void> addMedication({
-  required String uid,
-  required Medication medication,
-}) async {
-  await _db
-      .collection('users')
-      .doc(uid)
-      .collection('medications')
-      .add(medication.toMap());
-}
-
-Future<void> updateMedication({
-  required String uid,
-  required Medication medication,
-}) async {
-  await _db
-      .collection('users')
-      .doc(uid)
-      .collection('medications')
-      .doc(medication.id)
-      .update(medication.toMap());
-}
-
-Future<void> deleteMedication({
-  required String uid,
-  required String medicationId,
-}) async {
-  await _db
-      .collection('users')
-      .doc(uid)
-      .collection('medications')
-      .doc(medicationId)
-      .delete();
-}
-
-Future<Medication?> getMedicationById({
-  required String uid,
-  required String medicationId,
-}) async {
-  final doc = await _db
-      .collection('users')
-      .doc(uid)
-      .collection('medications')
-      .doc(medicationId)
-      .get();
-
-  if (!doc.exists || doc.data() == null) return null;
-  return Medication.fromMap(doc.id, doc.data()!);
-}
-
-Future<void> addMedicationLog({
-  required String uid,
-  required String medicationId,
-  required MedicationLog log,
-}) async {
-  final docRef = _db
-      .collection('users')
-      .doc(uid)
-      .collection('medications')
-      .doc(medicationId);
-
-  final doc = await docRef.get();
-  if (!doc.exists || doc.data() == null) return;
-
-  final medication = Medication.fromMap(doc.id, doc.data()!);
-  final updatedLogs = [...medication.logs, log];
-
-  await docRef.update({
-    'logs': updatedLogs.map((e) => e.toMap()).toList(),
-  });
-}
 }

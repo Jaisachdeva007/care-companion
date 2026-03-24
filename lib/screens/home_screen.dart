@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../models/app_user.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import 'edit_health_info_screen.dart';
@@ -9,8 +10,25 @@ import 'emergency_services_screen.dart';
 import 'login_screen.dart';
 import 'medication_list_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final FirestoreService _firestoreService = FirestoreService();
+  final TextEditingController _caregiverCodeController = TextEditingController();
+
+  bool _isGeneratingCode = false;
+  bool _isLinkingCaregiver = false;
+
+  @override
+  void dispose() {
+    _caregiverCodeController.dispose();
+    super.dispose();
+  }
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
@@ -22,6 +40,30 @@ class HomeScreen extends StatelessWidget {
   String _formatRole(String role) {
     if (role.isEmpty) return 'User';
     return role[0].toUpperCase() + role.substring(1);
+  }
+
+  List<String> _extractLinkedSeniorUids(Map<String, dynamic> userData) {
+    final multi = List<String>.from(userData['linkedSeniorUids'] ?? []);
+    final single = (userData['linkedSeniorUid'] ?? '').toString().trim();
+
+    final result = <String>{...multi};
+    if (single.isNotEmpty) {
+      result.add(single);
+    }
+
+    return result.toList();
+  }
+
+  List<String> _extractLinkedCaregiverUids(Map<String, dynamic> userData) {
+    final multi = List<String>.from(userData['linkedCaregiverUids'] ?? []);
+    final single = (userData['linkedCaregiverUid'] ?? '').toString().trim();
+
+    final result = <String>{...multi};
+    if (single.isNotEmpty) {
+      result.add(single);
+    }
+
+    return result.toList();
   }
 
   DateTime? _parseMedicationTime(String time) {
@@ -83,7 +125,7 @@ class HomeScreen extends StatelessWidget {
       if (mins == 0) {
         return 'Due in $hours hr${hours == 1 ? '' : 's'}';
       }
-      return 'Due in $hours hr ${mins} min';
+      return 'Due in $hours hr $mins min';
     }
 
     return 'Due in ${diff.inMinutes} min';
@@ -125,13 +167,76 @@ class HomeScreen extends StatelessWidget {
     };
   }
 
+  Future<void> _generateCaregiverCode(String uid) async {
+    setState(() {
+      _isGeneratingCode = true;
+    });
+
+    try {
+      final code = await _firestoreService.generateCaregiverCode(uid);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Caregiver code generated: $code')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to generate code: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGeneratingCode = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _linkCaregiver(String caregiverUid) async {
+    setState(() {
+      _isLinkingCaregiver = true;
+    });
+
+    try {
+      final result = await _firestoreService.linkCaregiverToSenior(
+        caregiverUid: caregiverUid,
+        code: _caregiverCodeController.text,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result)),
+      );
+
+      if (result.toLowerCase().contains('linked successfully')) {
+        _caregiverCodeController.clear();
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to link caregiver: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLinkingCaregiver = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser!;
+    final firebaseUser = FirebaseAuth.instance.currentUser!;
     final authService = AuthService();
 
     return StreamBuilder(
-      stream: FirestoreService().getUserStream(user.uid),
+      stream: _firestoreService.getUserStream(firebaseUser.uid),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
@@ -169,7 +274,7 @@ class HomeScreen extends StatelessWidget {
               children: [
                 UserAccountsDrawerHeader(
                   accountName: Text(fullName.isEmpty ? 'User' : fullName),
-                  accountEmail: Text(user.email ?? ''),
+                  accountEmail: Text(firebaseUser.email ?? ''),
                   currentAccountPicture: const CircleAvatar(
                     backgroundColor: Colors.white,
                     child: Icon(Icons.person, size: 32),
@@ -210,32 +315,34 @@ class HomeScreen extends StatelessWidget {
                     );
                   },
                 ),
-                ListTile(
-                  leading: const Icon(Icons.health_and_safety),
-                  title: const Text('Update Health Info'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const EditHealthInfoScreen(),
-                      ),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.medication),
-                  title: const Text('Medications'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const MedicationListScreen(),
-                      ),
-                    );
-                  },
-                ),
+                if (role == 'senior') ...[
+                  ListTile(
+                    leading: const Icon(Icons.health_and_safety),
+                    title: const Text('Update Health Info'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const EditHealthInfoScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.medication),
+                    title: const Text('Medications'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MedicationListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
                 const Divider(),
                 ListTile(
                   leading: const Icon(Icons.logout),
@@ -271,11 +378,24 @@ class HomeScreen extends StatelessWidget {
                     userData: userData,
                   ),
                   const SizedBox(height: 18),
-                  _buildMedicationSummaryCard(context, user.uid),
-                  const SizedBox(height: 22),
+                  if (role == 'senior') ...[
+                    _buildSeniorCaregiverCard(
+                      userData: userData,
+                      uid: firebaseUser.uid,
+                    ),
+                    const SizedBox(height: 18),
+                    _buildMedicationSummaryCard(context, firebaseUser.uid),
+                    const SizedBox(height: 22),
+                  ] else ...[
+                    _buildCaregiverDashboard(
+                      caregiverUid: firebaseUser.uid,
+                      userData: userData,
+                    ),
+                    const SizedBox(height: 22),
+                  ],
                   _buildSectionTitle('Quick Actions'),
                   const SizedBox(height: 14),
-                  _buildQuickActionsSection(context),
+                  _buildQuickActionsSection(context, role),
                   const SizedBox(height: 22),
                   _buildEmergencyCard(context),
                 ],
@@ -305,6 +425,107 @@ class HomeScreen extends StatelessWidget {
     required Map<String, dynamic> userData,
   }) {
     final displayName = fullName.isEmpty ? 'User' : fullName;
+
+    if (role == 'caregiver') {
+      final linkedSeniorUids = _extractLinkedSeniorUids(userData);
+
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: const Color(0xFFE5E7EB),
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0F000000),
+              blurRadius: 18,
+              offset: Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${_getGreeting()}, $displayName',
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF111827),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Container(
+                  height: 58,
+                  width: 58,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF4FF),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: const Icon(
+                    Icons.people_alt_outlined,
+                    size: 30,
+                    color: Color(0xFF4F8CFF),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayName,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _buildChip(
+                            icon: Icons.badge_outlined,
+                            label: _formatRole(role),
+                          ),
+                          _buildChip(
+                            icon: Icons.link_outlined,
+                            label:
+                                '${linkedSeniorUids.length} linked senior${linkedSeniorUids.length == 1 ? '' : 's'}',
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const EditProfileScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.edit_outlined,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
     final bloodGroup = (userData['bloodGroup'] ?? 'Not added').toString();
 
     String emergencyContact = 'Not added';
@@ -535,9 +756,420 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildSeniorCaregiverCard({
+    required Map<String, dynamic> userData,
+    required String uid,
+  }) {
+    final caregiverCode = (userData['caregiverCode'] ?? '').toString();
+    final linkedCaregiverUids = _extractLinkedCaregiverUids(userData);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0F000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.link_outlined,
+                size: 26,
+                color: Color(0xFF111827),
+              ),
+              SizedBox(width: 10),
+              Text(
+                'Caregiver Access',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF111827),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Generate a caregiver code and share it with trusted caregivers so they can link to your account.',
+            style: TextStyle(
+              fontSize: 15,
+              height: 1.4,
+              color: Color(0xFF6B7280),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Your Caregiver Code',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF6B7280),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  caregiverCode.isEmpty ? 'Not generated yet' : caregiverCode,
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 2,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFECFDF5),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFA7F3D0)),
+            ),
+            child: Text(
+              '${linkedCaregiverUids.length} caregiver${linkedCaregiverUids.length == 1 ? '' : 's'} linked',
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF065F46),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed:
+                  _isGeneratingCode ? null : () => _generateCaregiverCode(uid),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4F8CFF),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: _isGeneratingCode
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(
+                      caregiverCode.isEmpty
+                          ? 'Generate Caregiver Code'
+                          : 'Regenerate Caregiver Code',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCaregiverDashboard({
+    required String caregiverUid,
+    required Map<String, dynamic> userData,
+  }) {
+    final linkedSeniorUids = _extractLinkedSeniorUids(userData);
+
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0F000000),
+                blurRadius: 18,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(
+                    Icons.people_alt_outlined,
+                    size: 26,
+                    color: Color(0xFF111827),
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    'Link a Senior',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Enter a caregiver code to link another senior to your caregiver account.',
+                style: TextStyle(
+                  fontSize: 15,
+                  height: 1.4,
+                  color: Color(0xFF6B7280),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _caregiverCodeController,
+                textCapitalization: TextCapitalization.characters,
+                decoration: InputDecoration(
+                  labelText: 'Caregiver Code',
+                  hintText: 'Enter code',
+                  filled: true,
+                  fillColor: const Color(0xFFF9FAFB),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide:
+                        const BorderSide(color: Color(0xFFE5E7EB)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide:
+                        const BorderSide(color: Color(0xFFE5E7EB)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide:
+                        const BorderSide(color: Color(0xFF4F8CFF)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLinkingCaregiver
+                      ? null
+                      : () => _linkCaregiver(caregiverUid),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4F8CFF),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: _isLinkingCaregiver
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Link Senior',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        _buildLinkedSeniorsList(linkedSeniorUids),
+      ],
+    );
+  }
+
+  Widget _buildLinkedSeniorsList(List<String> linkedSeniorUids) {
+    return FutureBuilder<List<AppUser>>(
+      future: _firestoreService.getUsersByUids(linkedSeniorUids),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: const Row(
+              children: [
+                SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 12),
+                Text('Loading linked seniors...'),
+              ],
+            ),
+          );
+        }
+
+        final seniors = snapshot.data ?? [];
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0F000000),
+                blurRadius: 18,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.person_search_outlined,
+                    size: 26,
+                    color: Color(0xFF111827),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Linked Seniors (${seniors.length})',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (seniors.isEmpty)
+                const Text(
+                  'No seniors linked yet.',
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Color(0xFF6B7280),
+                  ),
+                )
+              else
+                ...seniors.map((senior) => _buildSeniorListTile(senior)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSeniorListTile(AppUser senior) {
+    String emergencyContact = 'Not added';
+    if (senior.emergencyContacts.isNotEmpty) {
+      final first = senior.emergencyContacts.first;
+      final name = (first['name'] ?? '').toString();
+      final phone = (first['phone'] ?? '').toString();
+
+      if (name.isNotEmpty || phone.isNotEmpty) {
+        emergencyContact = phone.isEmpty ? name : '$name  •  $phone';
+      }
+    }
+
+    final allergies =
+        senior.allergies.isEmpty ? 'Not added' : senior.allergies.join(', ');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            senior.fullName.isEmpty ? 'Unnamed Senior' : senior.fullName,
+            style: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF111827),
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildInlineInfo(
+            'Phone',
+            senior.phone.isEmpty ? 'Not added' : senior.phone,
+          ),
+          _buildInlineInfo(
+            'Address',
+            senior.address.isEmpty ? 'Not added' : senior.address,
+          ),
+          _buildInlineInfo('Allergies', allergies),
+          _buildInlineInfo('Emergency Contact', emergencyContact),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInlineInfo(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: RichText(
+        text: TextSpan(
+          style: const TextStyle(
+            fontSize: 14,
+            color: Color(0xFF374151),
+          ),
+          children: [
+            TextSpan(
+              text: '$label: ',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            TextSpan(text: value),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMedicationSummaryCard(BuildContext context, String uid) {
     return StreamBuilder(
-      stream: FirestoreService().getMedicationsStream(uid),
+      stream: _firestoreService.getMedicationsStream(uid),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _buildMedicationLoadingCard();
@@ -615,7 +1247,9 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      if ((nextMedication['dosage'] as String).trim().isNotEmpty)
+                      if ((nextMedication['dosage'] as String)
+                          .trim()
+                          .isNotEmpty)
                         Text(
                           nextMedication['dosage'] as String,
                           style: const TextStyle(
@@ -771,15 +1405,39 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickActionsSection(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 14,
-      crossAxisSpacing: 14,
-      childAspectRatio: 1.08,
-      children: [
+  Widget _buildQuickActionsSection(BuildContext context, String role) {
+    final actions = <Widget>[
+      _buildActionCard(
+        title: 'Emergency',
+        subtitle: 'Nearby help and support',
+        icon: Icons.emergency_outlined,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const EmergencyServicesScreen(),
+            ),
+          );
+        },
+      ),
+      _buildActionCard(
+        title: 'Profile',
+        subtitle: 'Edit your personal info',
+        icon: Icons.person_outline,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const EditProfileScreen(),
+            ),
+          );
+        },
+      ),
+    ];
+
+    if (role == 'senior') {
+      actions.insert(
+        0,
         _buildActionCard(
           title: 'Medications',
           subtitle: 'View and manage meds',
@@ -793,32 +1451,9 @@ class HomeScreen extends StatelessWidget {
             );
           },
         ),
-        _buildActionCard(
-          title: 'Emergency',
-          subtitle: 'Nearby help and support',
-          icon: Icons.emergency_outlined,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const EmergencyServicesScreen(),
-              ),
-            );
-          },
-        ),
-        _buildActionCard(
-          title: 'Profile',
-          subtitle: 'Edit your personal info',
-          icon: Icons.person_outline,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const EditProfileScreen(),
-              ),
-            );
-          },
-        ),
+      );
+
+      actions.add(
         _buildActionCard(
           title: 'Health Info',
           subtitle: 'Update medical details',
@@ -832,7 +1467,17 @@ class HomeScreen extends StatelessWidget {
             );
           },
         ),
-      ],
+      );
+    }
+
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 14,
+      crossAxisSpacing: 14,
+      childAspectRatio: 1.08,
+      children: actions,
     );
   }
 

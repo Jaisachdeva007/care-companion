@@ -8,8 +8,10 @@ class AppUser {
   final String address;
   final List<Map<String, dynamic>> emergencyContacts;
   final bool profileCompleted;
-  final String? linkedCaregiverUid;
-  final String? linkedSeniorUid;
+
+  final String? caregiverCode;
+  final List<String> linkedCaregiverUids;
+  final List<String> linkedSeniorUids;
 
   final String preferredName;
   final String age;
@@ -32,8 +34,9 @@ class AppUser {
     required this.address,
     required this.emergencyContacts,
     required this.profileCompleted,
-    this.linkedCaregiverUid,
-    this.linkedSeniorUid,
+    this.caregiverCode,
+    required this.linkedCaregiverUids,
+    required this.linkedSeniorUids,
     required this.preferredName,
     required this.age,
     required this.healthConditions,
@@ -47,6 +50,22 @@ class AppUser {
   });
 
   factory AppUser.fromMap(Map<String, dynamic> map) {
+    final linkedCaregiverUids = List<String>.from(
+      map['linkedCaregiverUids'] ??
+          ((map['linkedCaregiverUid'] != null &&
+                  map['linkedCaregiverUid'].toString().isNotEmpty)
+              ? [map['linkedCaregiverUid'].toString()]
+              : []),
+    );
+
+    final linkedSeniorUids = List<String>.from(
+      map['linkedSeniorUids'] ??
+          ((map['linkedSeniorUid'] != null &&
+                  map['linkedSeniorUid'].toString().isNotEmpty)
+              ? [map['linkedSeniorUid'].toString()]
+              : []),
+    );
+
     return AppUser(
       uid: map['uid'] ?? '',
       email: map['email'] ?? '',
@@ -58,8 +77,9 @@ class AppUser {
       emergencyContacts:
           List<Map<String, dynamic>>.from(map['emergencyContacts'] ?? []),
       profileCompleted: map['profileCompleted'] ?? false,
-      linkedCaregiverUid: map['linkedCaregiverUid'],
-      linkedSeniorUid: map['linkedSeniorUid'],
+      caregiverCode: map['caregiverCode'],
+      linkedCaregiverUids: linkedCaregiverUids,
+      linkedSeniorUids: linkedSeniorUids,
       preferredName: map['preferredName'] ?? '',
       age: map['age'] ?? '',
       healthConditions: List<String>.from(map['healthConditions'] ?? []),
@@ -84,8 +104,9 @@ class AppUser {
       'address': address,
       'emergencyContacts': emergencyContacts,
       'profileCompleted': profileCompleted,
-      'linkedCaregiverUid': linkedCaregiverUid,
-      'linkedSeniorUid': linkedSeniorUid,
+      'caregiverCode': caregiverCode,
+      'linkedCaregiverUids': linkedCaregiverUids,
+      'linkedSeniorUids': linkedSeniorUids,
       'preferredName': preferredName,
       'age': age,
       'healthConditions': healthConditions,
