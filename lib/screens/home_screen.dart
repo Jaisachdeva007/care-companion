@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../models/alert_item.dart';
 import '../models/app_user.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
@@ -23,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _isGeneratingCode = false;
   bool _isLinkingCaregiver = false;
+  bool _isSendingAlert = false;
 
   @override
   void dispose() {
@@ -131,6 +133,18 @@ class _HomeScreenState extends State<HomeScreen> {
     return 'Due in ${diff.inMinutes} min';
   }
 
+  String _formatAlertTime(DateTime? dt) {
+    if (dt == null) return 'Just now';
+
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+    if (diff.inHours < 24) return '${diff.inHours} hr ago';
+    return '${dt.day}/${dt.month}/${dt.year}';
+  }
+
   Map<String, dynamic>? _getNextMedication(List<dynamic> medications) {
     final now = DateTime.now();
 
@@ -230,6 +244,78 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _showCheckOnMeDialog(String seniorUid) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Alert caregiver?'),
+          content: const Text(
+            'This will send a "Check on Me" alert to your linked caregiver(s).',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Send Alert'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    setState(() {
+      _isSendingAlert = true;
+    });
+
+    try {
+      final result = await _firestoreService.createCheckOnMeAlert(
+        seniorUid: seniorUid,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to send alert: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSendingAlert = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _resolveAlert(String alertId) async {
+    try {
+      await _firestoreService.resolveAlert(alertId);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Alert marked as resolved.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to resolve alert: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final firebaseUser = FirebaseAuth.instance.currentUser!;
@@ -269,15 +355,34 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           drawer: Drawer(
+            backgroundColor: const Color(0xFFF5F7FB),
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
                 UserAccountsDrawerHeader(
-                  accountName: Text(fullName.isEmpty ? 'User' : fullName),
-                  accountEmail: Text(firebaseUser.email ?? ''),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF5F7FB),
+                  ),
+                  accountName: Text(
+                    fullName.isEmpty ? 'User' : fullName,
+                    style: const TextStyle(
+                      color: Color(0xFF1F2937),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  accountEmail: Text(
+                    firebaseUser.email ?? '',
+                    style: const TextStyle(
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
                   currentAccountPicture: const CircleAvatar(
                     backgroundColor: Colors.white,
-                    child: Icon(Icons.person, size: 32),
+                    child: Icon(
+                      Icons.person,
+                      size: 32,
+                      color: Color(0xFF4F8CFF),
+                    ),
                   ),
                 ),
                 ListTile(
@@ -384,6 +489,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       uid: firebaseUser.uid,
                     ),
                     const SizedBox(height: 18),
+                    _buildCheckOnMeCard(
+                      uid: firebaseUser.uid,
+                      userData: userData,
+                    ),
+                    const SizedBox(height: 18),
                     _buildMedicationSummaryCard(context, firebaseUser.uid),
                     const SizedBox(height: 22),
                   ] else ...[
@@ -391,6 +501,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       caregiverUid: firebaseUser.uid,
                       userData: userData,
                     ),
+                    const SizedBox(height: 18),
+                    _buildCaregiverAlertsSection(firebaseUser.uid),
                     const SizedBox(height: 22),
                   ],
                   _buildSectionTitle('Quick Actions'),
@@ -894,6 +1006,97 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildCheckOnMeCard({
+    required String uid,
+    required Map<String, dynamic> userData,
+  }) {
+    final linkedCaregiverUids = _extractLinkedCaregiverUids(userData);
+    final hasCaregiver = linkedCaregiverUids.isNotEmpty;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0F000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.notifications_active_outlined,
+                size: 26,
+                color: Color(0xFFB91C1C),
+              ),
+              SizedBox(width: 10),
+              Text(
+                'Check on Me',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF111827),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            hasCaregiver
+                ? 'Press the button below to alert your caregiver to check on you.'
+                : 'Link a caregiver first before using this alert feature.',
+            style: const TextStyle(
+              fontSize: 15,
+              height: 1.4,
+              color: Color(0xFF6B7280),
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: (!hasCaregiver || _isSendingAlert)
+                  ? null
+                  : () => _showCheckOnMeDialog(uid),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFDC2626),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              icon: _isSendingAlert
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.campaign_outlined),
+              label: Text(
+                _isSendingAlert ? 'Sending Alert...' : 'Alert Caregiver',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCaregiverDashboard({
     required String caregiverUid,
     required Map<String, dynamic> userData,
@@ -1010,6 +1213,138 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 18),
         _buildLinkedSeniorsList(linkedSeniorUids),
       ],
+    );
+  }
+
+  Widget _buildCaregiverAlertsSection(String caregiverUid) {
+    return StreamBuilder<List<AlertItem>>(
+      stream: _firestoreService.getActiveAlertsForCaregiver(caregiverUid),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: const Row(
+              children: [
+                SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 12),
+                Text('Loading alerts...'),
+              ],
+            ),
+          );
+        }
+
+        final alerts = snapshot.data ?? [];
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0F000000),
+                blurRadius: 18,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(
+                    Icons.notification_important_outlined,
+                    size: 26,
+                    color: Color(0xFFB91C1C),
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    'Active Alerts',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (alerts.isEmpty)
+                const Text(
+                  'No active alerts right now.',
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Color(0xFF6B7280),
+                  ),
+                )
+              else
+                ...alerts.map((alert) => _buildAlertTile(alert)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAlertTile(AlertItem alert) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF2F2),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFFECACA)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            alert.seniorName.isEmpty ? 'Senior User' : alert.seniorName,
+            style: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF991B1B),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            alert.message,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF374151),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            _formatAlertTime(alert.createdAt),
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF6B7280),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: OutlinedButton(
+              onPressed: () => _resolveAlert(alert.id),
+              child: const Text('Mark Resolved'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

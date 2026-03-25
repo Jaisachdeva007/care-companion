@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/alert_item.dart';
 import '../models/app_user.dart';
 import '../models/medication.dart';
 
@@ -10,6 +11,8 @@ class FirestoreService {
   Future<void> createBasicUser({
     required String uid,
     required String email,
+    String fullName = '',
+    String role = 'senior',
   }) async {
     final doc = _db.collection('users').doc(uid);
 
@@ -19,14 +22,14 @@ class FirestoreService {
     await doc.set({
       'uid': uid,
       'email': email,
-      'fullName': '',
-      'role': 'senior',
+      'fullName': fullName,
+      'role': role.toLowerCase(),
       'language': '',
       'phone': '',
       'address': '',
       'emergencyContacts': [],
       'profileCompleted': false,
-      'questionnaireCompleted': false,
+      'questionnaireCompleted': role.toLowerCase() == 'caregiver',
       'preferredName': '',
       'age': '',
       'healthConditions': [],
@@ -251,6 +254,65 @@ class FirestoreService {
     return seniorName.isEmpty
         ? 'Senior linked successfully.'
         : 'Linked successfully to $seniorName.';
+  }
+
+  Future<String> createCheckOnMeAlert({
+    required String seniorUid,
+    String message = 'Please check on me.',
+  }) async {
+    final seniorDoc = await _db.collection('users').doc(seniorUid).get();
+
+    if (!seniorDoc.exists || seniorDoc.data() == null) {
+      return 'Senior account not found.';
+    }
+
+    final seniorData = seniorDoc.data()!;
+    final caregiverUids = List<String>.from(
+      seniorData['linkedCaregiverUids'] ??
+          ((seniorData['linkedCaregiverUid'] != null &&
+                  seniorData['linkedCaregiverUid'].toString().isNotEmpty)
+              ? [seniorData['linkedCaregiverUid'].toString()]
+              : []),
+    );
+
+    if (caregiverUids.isEmpty) {
+      return 'No caregiver is linked yet.';
+    }
+
+    final seniorName = (seniorData['fullName'] ?? '').toString().trim();
+
+    await _db.collection('alerts').add({
+      'seniorUid': seniorUid,
+      'seniorName': seniorName.isEmpty ? 'Senior User' : seniorName,
+      'caregiverUids': caregiverUids,
+      'type': 'check_on_me',
+      'message': message,
+      'status': 'active',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    return 'Caregiver alerted successfully.';
+  }
+
+  Stream<List<AlertItem>> getActiveAlertsForCaregiver(String caregiverUid) {
+    return _db
+        .collection('alerts')
+        .where('caregiverUids', arrayContains: caregiverUid)
+        .where('status', isEqualTo: 'active')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => AlertItem.fromMap(doc.id, doc.data()))
+              .toList(),
+        );
+  }
+
+  Future<void> resolveAlert(String alertId) async {
+    await _db.collection('alerts').doc(alertId).update({
+      'status': 'resolved',
+      'resolvedAt': FieldValue.serverTimestamp(),
+    });
   }
 
   Stream<List<Medication>> getMedicationsStream(String uid) {
