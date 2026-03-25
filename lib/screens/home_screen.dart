@@ -548,10 +548,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         _buildCaregiverAlertsSection(firebaseUser.uid),
                         const SizedBox(height: 22),
                       ],
-                      _buildSectionTitle('Quick Actions'),
-                      const SizedBox(height: 14),
-                      _buildQuickActionsSection(context, role),
-                      const SizedBox(height: 22),
                       _buildEmergencyCard(context),
                     ],
                   ),
@@ -1111,7 +1107,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ? null
                   : () => _showCheckOnMeDialog(uid),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFDC2626),
+                backgroundColor: const Color.fromARGB(255, 255, 0, 0),
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 15),
@@ -1543,167 +1539,108 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMedicationSummaryCard(BuildContext context, String uid) {
-    return StreamBuilder(
-      stream: _firestoreService.getMedicationsStream(uid),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildMedicationLoadingCard();
-        }
+  return StreamBuilder(
+    stream: _firestoreService.getMedicationsStream(uid),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return _buildMedicationLoadingCard();
+      }
 
-        final medications = snapshot.data ?? [];
-        final activeMeds =
-            medications.where((med) => med.isActive == true).toList();
-        final totalActive = activeMeds.length;
-        final nextMedication = _getNextMedication(activeMeds);
+      final medications = snapshot.data ?? [];
+      final activeMeds =
+          medications.where((med) => med.isActive == true).toList();
+      final nextMedication = _getNextMedication(activeMeds);
 
-        final int totalScheduledToday = activeMeds.isEmpty
-            ? 0
-            : activeMeds
-                .map<int>((med) => med.scheduleTimes.length)
-                .fold<int>(0, (int sum, int count) => sum + count);
-
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0F000000),
-                blurRadius: 18,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Row(
-                children: [
-                  Icon(
-                    Icons.medication_outlined,
-                    size: 28,
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0F000000),
+              blurRadius: 18,
+              offset: Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(
+                  Icons.medication_outlined,
+                  size: 28,
+                  color: Color(0xFF111827),
+                ),
+                SizedBox(width: 10),
+                Text(
+                  'Next Medication',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
                     color: Color(0xFF111827),
                   ),
-                  SizedBox(width: 10),
-                  Text(
-                    'Today’s Medications',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF111827),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              if (totalActive == 0) ...[
-                const Text(
-                  'No active medications right now.',
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Color(0xFF6B7280),
-                  ),
                 ),
-                const SizedBox(height: 14),
-              ] else if (nextMedication != null) ...[
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        nextMedication['name'] as String,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF111827),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      if ((nextMedication['dosage'] as String).trim().isNotEmpty)
-                        Text(
-                          nextMedication['dosage'] as String,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF6B7280),
-                          ),
-                        ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          _buildMiniPill(
-                            label:
-                                'Next at ${_formatDisplayTime(nextMedication['time'] as DateTime)}',
-                          ),
-                          _buildMiniPill(
-                            label: _formatDueIn(
-                              nextMedication['time'] as DateTime,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
               ],
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  _buildStatBox(
-                    label: 'Active',
-                    value: '$totalActive',
-                  ),
-                  _buildStatBox(
-                    label: 'Scheduled Today',
-                    value: '$totalScheduledToday',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
+            ),
+            const SizedBox(height: 16),
+            if (nextMedication == null)
+              const Text(
+                'No upcoming medication right now.',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Color(0xFF6B7280),
+                ),
+              )
+            else
+              Container(
                 width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFEEF2FF),
-                    foregroundColor: const Color(0xFF374151),
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const MedicationListScreen(),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      nextMedication['name'] as String,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
                       ),
-                    );
-                  },
-                  child: const Text(
-                    'Open Medications',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'at ${_formatDisplayTime(nextMedication['time'] as DateTime)}',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: Color(0xFF374151),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatDueIn(nextMedication['time'] as DateTime),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: Color(0xFF6B7280),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+          ],
+        ),
+      );
+    },
+  );
+}
 
   Widget _buildMedicationLoadingCard() {
     return Container(
@@ -1918,9 +1855,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFBF5),
+        color: const Color.fromARGB(255, 255, 255, 255),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFFFE7C2)),
+        border: Border.all(color: const Color.fromARGB(255, 252, 252, 252)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -1932,7 +1869,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Icon(
                   Icons.warning_amber_rounded,
                   size: 30,
-                  color: Color(0xFFF59E0B),
+                  color: Color.fromARGB(255, 245, 11, 11),
                 ),
                 SizedBox(width: 10),
                 Text(
@@ -1940,7 +1877,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF92400E),
+                    color: Color.fromARGB(255, 255, 0, 0),
                   ),
                 ),
               ],
@@ -1959,7 +1896,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF59E0B),
+                  backgroundColor: const Color.fromARGB(255, 245, 11, 11),
                   foregroundColor: Colors.white,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 14),
