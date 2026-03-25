@@ -10,6 +10,7 @@ import 'edit_profile_screen.dart';
 import 'emergency_services_screen.dart';
 import 'login_screen.dart';
 import 'medication_list_screen.dart';
+import 'caregiver_access_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -66,6 +67,25 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return result.toList();
+  }
+
+  String _buildCheckOnMeSubtitle(Map<String, dynamic> userData) {
+    final caregiverNames =
+        List<String>.from(userData['linkedCaregiverNames'] ?? []);
+
+    if (caregiverNames.isEmpty) {
+      return 'Link a caregiver first before using this alert feature.';
+    }
+
+    if (caregiverNames.length == 1) {
+      return 'Press the button below to alert ${caregiverNames.first} to check on you.';
+    }
+
+    if (caregiverNames.length == 2) {
+      return 'Press the button below to alert ${caregiverNames[0]} and ${caregiverNames[1]} to check on you.';
+    }
+
+    return 'Press the button below to alert your caregivers to check on you.';
   }
 
   DateTime? _parseMedicationTime(String time) {
@@ -336,184 +356,209 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
 
-        final userData = snapshot.data!.data()!;
+        final userData = Map<String, dynamic>.from(snapshot.data!.data()!);
         final fullName = (userData['fullName'] ?? '').toString();
         final role = (userData['role'] ?? 'senior').toString();
+        final linkedCaregiverUids = _extractLinkedCaregiverUids(userData);
 
-        return Scaffold(
-          backgroundColor: const Color(0xFFF5F7FB),
-          appBar: AppBar(
-            backgroundColor: const Color(0xFFF5F7FB),
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            title: const Text(
-              'Care Companion',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1F2937),
+        return FutureBuilder<List<AppUser>>(
+          future: role == 'senior' && linkedCaregiverUids.isNotEmpty
+              ? _firestoreService.getUsersByUids(linkedCaregiverUids)
+              : Future.value([]),
+          builder: (context, caregiverSnapshot) {
+            final caregivers = caregiverSnapshot.data ?? [];
+
+            if (role == 'senior') {
+              userData['linkedCaregiverNames'] = caregivers
+                  .map((caregiver) => caregiver.fullName.trim())
+                  .where((name) => name.isNotEmpty)
+                  .toList();
+            }
+
+            return Scaffold(
+              backgroundColor: const Color(0xFFF5F7FB),
+              appBar: AppBar(
+                backgroundColor: const Color(0xFFF5F7FB),
+                elevation: 0,
+                scrolledUnderElevation: 0,
+                title: const Text(
+                  'Care Companion',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1F2937),
+                  ),
+                ),
               ),
-            ),
-          ),
-          drawer: Drawer(
-            backgroundColor: const Color(0xFFF5F7FB),
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                UserAccountsDrawerHeader(
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF5F7FB),
-                  ),
-                  accountName: Text(
-                    fullName.isEmpty ? 'User' : fullName,
-                    style: const TextStyle(
-                      color: Color(0xFF1F2937),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  accountEmail: Text(
-                    firebaseUser.email ?? '',
-                    style: const TextStyle(
-                      color: Color(0xFF6B7280),
-                    ),
-                  ),
-                  currentAccountPicture: const CircleAvatar(
-                    backgroundColor: Colors.white,
-                    child: Icon(
-                      Icons.person,
-                      size: 32,
-                      color: Color(0xFF4F8CFF),
-                    ),
-                  ),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.home),
-                  title: const Text('Home'),
-                  onTap: () => Navigator.pop(context),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.emergency),
-                  title: const Text('Emergency Services'),
-                  subtitle: const Text(
-                    'Find nearby hospital, ER, clinic, and pharmacy',
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const EmergencyServicesScreen(),
+              drawer: Drawer(
+                backgroundColor: const Color(0xFFF5F7FB),
+                child: ListView(
+                  padding: EdgeInsets.zero,
+                  children: [
+                    UserAccountsDrawerHeader(
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF5F7FB),
                       ),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.edit),
-                  title: const Text('Update My Info'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const EditProfileScreen(),
-                      ),
-                    );
-                  },
-                ),
-                if (role == 'senior') ...[
-                  ListTile(
-                    leading: const Icon(Icons.health_and_safety),
-                    title: const Text('Update Health Info'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const EditHealthInfoScreen(),
+                      accountName: Text(
+                        fullName.isEmpty ? 'User' : fullName,
+                        style: const TextStyle(
+                          color: Color(0xFF1F2937),
+                          fontWeight: FontWeight.w700,
                         ),
-                      );
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.medication),
-                    title: const Text('Medications'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const MedicationListScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.logout),
-                  title: const Text('Log Out'),
-                  onTap: () async {
-                    Navigator.pop(context);
-                    await authService.logout();
-
-                    if (!context.mounted) return;
-
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const LoginScreen(),
                       ),
-                      (route) => false,
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          body: SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildIdentityCard(
-                    context: context,
-                    fullName: fullName,
-                    role: role,
-                    userData: userData,
-                  ),
-                  const SizedBox(height: 18),
-                  if (role == 'senior') ...[
-                    _buildSeniorCaregiverCard(
-                      userData: userData,
-                      uid: firebaseUser.uid,
+                      accountEmail: Text(
+                        firebaseUser.email ?? '',
+                        style: const TextStyle(
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                      currentAccountPicture: const CircleAvatar(
+                        backgroundColor: Colors.white,
+                        child: Icon(
+                          Icons.person,
+                          size: 32,
+                          color: Color(0xFF4F8CFF),
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 18),
-                    _buildCheckOnMeCard(
-                      uid: firebaseUser.uid,
-                      userData: userData,
+                    ListTile(
+                      leading: const Icon(Icons.home),
+                      title: const Text('Home'),
+                      onTap: () => Navigator.pop(context),
                     ),
-                    const SizedBox(height: 18),
-                    _buildMedicationSummaryCard(context, firebaseUser.uid),
-                    const SizedBox(height: 22),
-                  ] else ...[
-                    _buildCaregiverDashboard(
-                      caregiverUid: firebaseUser.uid,
-                      userData: userData,
+                    ListTile(
+                      leading: const Icon(Icons.emergency),
+                      title: const Text('Emergency Services'),
+                      subtitle: const Text(
+                        'Find nearby hospital, ER, clinic, and pharmacy',
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const EmergencyServicesScreen(),
+                          ),
+                        );
+                      },
                     ),
-                    const SizedBox(height: 18),
-                    _buildCaregiverAlertsSection(firebaseUser.uid),
-                    const SizedBox(height: 22),
+                    ListTile(
+                      leading: const Icon(Icons.edit),
+                      title: const Text('Update My Info'),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const EditProfileScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    if (role == 'senior') ...[
+                      ListTile(
+                        leading: const Icon(Icons.health_and_safety),
+                        title: const Text('Update Health Info'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const EditHealthInfoScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.medication),
+                        title: const Text('Medications'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const MedicationListScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.link_outlined),
+                        title: const Text('Caregiver Access'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const CaregiverAccessScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                    const Divider(),
+                    ListTile(
+                      leading: const Icon(Icons.logout),
+                      title: const Text('Log Out'),
+                      onTap: () async {
+                        Navigator.pop(context);
+                        await authService.logout();
+
+                        if (!context.mounted) return;
+
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
+                          ),
+                          (route) => false,
+                        );
+                      },
+                    ),
                   ],
-                  _buildSectionTitle('Quick Actions'),
-                  const SizedBox(height: 14),
-                  _buildQuickActionsSection(context, role),
-                  const SizedBox(height: 22),
-                  _buildEmergencyCard(context),
-                ],
+                ),
               ),
-            ),
-          ),
+              body: SafeArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildIdentityCard(
+                        context: context,
+                        fullName: fullName,
+                        role: role,
+                        userData: userData,
+                      ),
+                      const SizedBox(height: 18),
+                      if (role == 'senior') ...[
+                        _buildCheckOnMeCard(
+                          uid: firebaseUser.uid,
+                          userData: userData,
+                        ),
+                        const SizedBox(height: 18),
+                        _buildMedicationSummaryCard(context, firebaseUser.uid),
+                        const SizedBox(height: 22),
+                      ] else ...[
+                        _buildCaregiverDashboard(
+                          caregiverUid: firebaseUser.uid,
+                          userData: userData,
+                        ),
+                        const SizedBox(height: 18),
+                        _buildCaregiverAlertsSection(firebaseUser.uid),
+                        const SizedBox(height: 22),
+                      ],
+                      _buildSectionTitle('Quick Actions'),
+                      const SizedBox(height: 14),
+                      _buildQuickActionsSection(context, role),
+                      const SizedBox(height: 22),
+                      _buildEmergencyCard(context),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
         );
       },
     );
@@ -1051,9 +1096,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            hasCaregiver
-                ? 'Press the button below to alert your caregiver to check on you.'
-                : 'Link a caregiver first before using this alert feature.',
+            _buildCheckOnMeSubtitle(userData),
             style: const TextStyle(
               fontSize: 15,
               height: 1.4,
@@ -1161,18 +1204,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   fillColor: const Color(0xFFF9FAFB),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide:
-                        const BorderSide(color: Color(0xFFE5E7EB)),
+                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide:
-                        const BorderSide(color: Color(0xFFE5E7EB)),
+                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide:
-                        const BorderSide(color: Color(0xFF4F8CFF)),
+                    borderSide: const BorderSide(color: Color(0xFF4F8CFF)),
                   ),
                 ),
               ),
@@ -1516,6 +1556,12 @@ class _HomeScreenState extends State<HomeScreen> {
         final totalActive = activeMeds.length;
         final nextMedication = _getNextMedication(activeMeds);
 
+        final int totalScheduledToday = activeMeds.isEmpty
+            ? 0
+            : activeMeds
+                .map<int>((med) => med.scheduleTimes.length)
+                .fold<int>(0, (int sum, int count) => sum + count);
+
         return Container(
           width: double.infinity,
           padding: const EdgeInsets.all(18),
@@ -1582,9 +1628,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      if ((nextMedication['dosage'] as String)
-                          .trim()
-                          .isNotEmpty)
+                      if ((nextMedication['dosage'] as String).trim().isNotEmpty)
                         Text(
                           nextMedication['dosage'] as String,
                           style: const TextStyle(
@@ -1623,9 +1667,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   _buildStatBox(
                     label: 'Scheduled Today',
-                    value: activeMeds.isEmpty
-                        ? '0'
-                        : '${activeMeds.fold<int>(0, (sum, med) => sum + med.scheduleTimes.length)}',
+                    value: '$totalScheduledToday',
                   ),
                 ],
               ),
