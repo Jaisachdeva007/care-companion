@@ -11,6 +11,7 @@ import 'emergency_services_screen.dart';
 import 'login_screen.dart';
 import 'medication_list_screen.dart';
 import 'caregiver_access_screen.dart';
+import 'link_senior_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -496,6 +497,20 @@ class _HomeScreenState extends State<HomeScreen> {
                         },
                       ),
                     ],
+                    if (role == 'caregiver')
+                      ListTile(
+                        leading: const Icon(Icons.person_add_alt_1_outlined),
+                        title: const Text('Link a Senior'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LinkSeniorScreen(),
+                            ),
+                          );
+                        },
+                      ),
                     const Divider(),
                     ListTile(
                       leading: const Icon(Icons.logout),
@@ -540,14 +555,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         _buildMedicationSummaryCard(context, firebaseUser.uid),
                         const SizedBox(height: 22),
                       ] else ...[
-                        _buildCaregiverDashboard(
-                          caregiverUid: firebaseUser.uid,
-                          userData: userData,
-                        ),
-                        const SizedBox(height: 18),
-                        _buildCaregiverAlertsSection(firebaseUser.uid),
-                        const SizedBox(height: 22),
-                      ],
+                          _buildLinkedSeniorsList(_extractLinkedSeniorUids(userData)),
+                          const SizedBox(height: 18),
+                          _buildCaregiverAlertsSection(firebaseUser.uid),
+                          const SizedBox(height: 22),
+                        ],
                       _buildEmergencyCard(context),
                     ],
                   ),
