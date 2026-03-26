@@ -32,6 +32,8 @@ class FirestoreService {
       'questionnaireCompleted': role.toLowerCase() == 'caregiver',
       'preferredName': '',
       'age': '',
+      'bloodGroup': '',
+      'importantInfo': '',
       'healthConditions': [],
       'allergies': [],
       'medications': [],
@@ -54,6 +56,8 @@ class FirestoreService {
     required String phone,
     required String address,
     required List<Map<String, dynamic>> emergencyContacts,
+    String bloodGroup = '',
+    String importantInfo = '',
   }) async {
     await _db.collection('users').doc(uid).update({
       'fullName': fullName,
@@ -62,6 +66,8 @@ class FirestoreService {
       'phone': phone,
       'address': address,
       'emergencyContacts': emergencyContacts,
+      'bloodGroup': bloodGroup,
+      'importantInfo': importantInfo,
       'profileCompleted': true,
       if (role == 'caregiver') 'questionnaireCompleted': true,
     });
@@ -97,6 +103,8 @@ class FirestoreService {
     required String uid,
     required String preferredName,
     required String age,
+    String bloodGroup = '',
+    String importantInfo = '',
     required List<String> healthConditions,
     required List<String> allergies,
     required List<String> medications,
@@ -108,6 +116,8 @@ class FirestoreService {
     await _db.collection('users').doc(uid).update({
       'preferredName': preferredName,
       'age': age,
+      'bloodGroup': bloodGroup,
+      'importantInfo': importantInfo,
       'healthConditions': healthConditions,
       'allergies': allergies,
       'medications': medications,
@@ -123,6 +133,8 @@ class FirestoreService {
     required String uid,
     required String preferredName,
     required String age,
+    required String bloodGroup,
+    required String importantInfo,
     required List<String> healthConditions,
     required List<String> allergies,
     required List<String> medications,
@@ -134,6 +146,8 @@ class FirestoreService {
     await _db.collection('users').doc(uid).update({
       'preferredName': preferredName,
       'age': age,
+      'bloodGroup': bloodGroup,
+      'importantInfo': importantInfo,
       'healthConditions': healthConditions,
       'allergies': allergies,
       'medications': medications,

@@ -15,6 +15,8 @@ class AppUser {
 
   final String preferredName;
   final String age;
+  final String bloodGroup;
+  final String importantInfo;
   final List<String> healthConditions;
   final List<String> allergies;
   final List<String> medications;
@@ -39,6 +41,8 @@ class AppUser {
     required this.linkedSeniorUids,
     required this.preferredName,
     required this.age,
+    required this.bloodGroup,
+    required this.importantInfo,
     required this.healthConditions,
     required this.allergies,
     required this.medications,
@@ -82,6 +86,8 @@ class AppUser {
       linkedSeniorUids: linkedSeniorUids,
       preferredName: map['preferredName'] ?? '',
       age: map['age'] ?? '',
+      bloodGroup: map['bloodGroup'] ?? '',
+      importantInfo: map['importantInfo'] ?? '',
       healthConditions: List<String>.from(map['healthConditions'] ?? []),
       allergies: List<String>.from(map['allergies'] ?? []),
       medications: List<String>.from(map['medications'] ?? []),
@@ -109,6 +115,8 @@ class AppUser {
       'linkedSeniorUids': linkedSeniorUids,
       'preferredName': preferredName,
       'age': age,
+      'bloodGroup': bloodGroup,
+      'importantInfo': importantInfo,
       'healthConditions': healthConditions,
       'allergies': allergies,
       'medications': medications,
