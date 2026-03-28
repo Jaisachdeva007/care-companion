@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../models/app_user.dart';
 import '../services/firestore_service.dart';
+import '../widgets/custom_bottom_nav_bar.dart';
 
 class LinkSeniorScreen extends StatefulWidget {
   const LinkSeniorScreen({super.key});
@@ -88,12 +89,19 @@ class _LinkSeniorScreenState extends State<LinkSeniorScreen> {
             ),
           ),
           const SizedBox(height: 10),
-
           _info('Phone', senior.phone),
           _info('Address', senior.address),
           _info('Blood Group', senior.bloodGroup),
-          _info('Allergies', senior.allergies.join(', ')),
-          _info('Conditions', senior.healthConditions.join(', ')),
+          _info(
+            'Allergies',
+            senior.allergies.isEmpty ? '' : senior.allergies.join(', '),
+          ),
+          _info(
+            'Conditions',
+            senior.healthConditions.isEmpty
+                ? ''
+                : senior.healthConditions.join(', '),
+          ),
         ],
       ),
     );
@@ -114,7 +122,19 @@ class _LinkSeniorScreenState extends State<LinkSeniorScreen> {
       future: _firestoreService.getUsersByUids(uids),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
+          return Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF4F8CFF),
+              ),
+            ),
+          );
         }
 
         final seniors = snapshot.data!;
@@ -137,7 +157,6 @@ class _LinkSeniorScreenState extends State<LinkSeniorScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-
               if (seniors.isEmpty)
                 const Text('No seniors linked yet.')
               else
@@ -171,17 +190,25 @@ class _LinkSeniorScreenState extends State<LinkSeniorScreen> {
         stream: _firestoreService.getUserStream(uid),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
+            return const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFF4F8CFF),
+                ),
+              ),
+              bottomNavigationBar: CustomBottomNavBar(
+                currentTab: AppTab.seniors,
+              ),
+            );
           }
 
           final userData = snapshot.data!.data()!;
           final linkedUids = _extractLinkedSeniorUids(userData);
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
             child: Column(
               children: [
-                // 🔹 LINK CARD
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
@@ -204,7 +231,6 @@ class _LinkSeniorScreenState extends State<LinkSeniorScreen> {
                         color: Color(0xFF4F8CFF),
                       ),
                       const SizedBox(height: 10),
-
                       const Text(
                         'Connect to a Senior',
                         style: TextStyle(
@@ -212,17 +238,13 @@ class _LinkSeniorScreenState extends State<LinkSeniorScreen> {
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-
                       const SizedBox(height: 10),
-
                       const Text(
                         'Enter the code shared by a senior to connect accounts.',
                         textAlign: TextAlign.center,
                         style: TextStyle(color: Color(0xFF6B7280)),
                       ),
-
                       const SizedBox(height: 18),
-
                       TextField(
                         controller: _caregiverCodeController,
                         textCapitalization: TextCapitalization.characters,
@@ -235,16 +257,12 @@ class _LinkSeniorScreenState extends State<LinkSeniorScreen> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 14),
-
                       SizedBox(
                         width: double.infinity,
                         height: 52,
                         child: ElevatedButton(
-                          onPressed: _isLinking
-                              ? null
-                              : () => _linkSenior(uid),
+                          onPressed: _isLinking ? null : () => _linkSenior(uid),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF4F8CFF),
                             foregroundColor: Colors.white,
@@ -253,8 +271,13 @@ class _LinkSeniorScreenState extends State<LinkSeniorScreen> {
                             ),
                           ),
                           child: _isLinking
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white,
+                              ? const SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
                                 )
                               : const Text('Link Senior'),
                         ),
@@ -262,15 +285,15 @@ class _LinkSeniorScreenState extends State<LinkSeniorScreen> {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
-                // 🔹 LINKED LIST
                 _buildLinkedSection(linkedUids),
               ],
             ),
           );
         },
+      ),
+      bottomNavigationBar: const CustomBottomNavBar(
+        currentTab: AppTab.seniors,
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../models/nearby_place.dart';
 import '../services/openstreet_service.dart';
+import '../widgets/custom_bottom_nav_bar.dart';
 
 class EmergencyServicesScreen extends StatefulWidget {
   const EmergencyServicesScreen({super.key});
@@ -102,85 +103,135 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
   }
 
   Widget _buildPlaceCard(String title, IconData icon, NearbyPlace? place) {
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      elevation: 2,
+    return Container(
       margin: const EdgeInsets.only(bottom: 14),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: place == null
-            ? Row(
-                children: [
-                  Icon(icon, size: 28),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      '$title not found nearby',
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ),
-                ],
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(icon, size: 28),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    place.name,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0F000000),
+            blurRadius: 14,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: place == null
+          ? Row(
+              children: [
+                Icon(icon, size: 28, color: const Color(0xFF4F8CFF)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '$title not found nearby',
                     style: const TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1F2937),
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(place.address),
-                  const SizedBox(height: 6),
-                  Text('${place.distanceKm.toStringAsFixed(2)} km away'),
-                  const SizedBox(height: 12),
-                  ElevatedButton.icon(
+                ),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(icon, size: 28, color: const Color(0xFF4F8CFF)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1F2937),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  place.name,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  place.address,
+                  style: const TextStyle(
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '${place.distanceKm.toStringAsFixed(2)} km away',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF374151),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
                     onPressed: () => _openDirections(place),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4F8CFF),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
                     icon: const Icon(Icons.directions),
                     label: const Text('Directions'),
                   ),
-                ],
-              ),
-      ),
+                ),
+              ],
+            ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FB),
       appBar: AppBar(
-        title: const Text('Emergency Services'),
+        title: const Text(
+          'Emergency Services',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1F2937),
+          ),
+        ),
+        centerTitle: true,
       ),
       body: RefreshIndicator(
         onRefresh: _loadNearbyServices,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
           children: [
             if (_isLoading) ...[
               const SizedBox(height: 80),
-              const Center(child: CircularProgressIndicator()),
+              const Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFF4F8CFF),
+                ),
+              ),
               const SizedBox(height: 16),
-              const Center(child: Text('Finding nearby services...')),
+              const Center(
+                child: Text(
+                  'Finding nearby services...',
+                  style: TextStyle(color: Color(0xFF6B7280)),
+                ),
+              ),
             ] else if (_error != null) ...[
               const SizedBox(height: 40),
               Center(
@@ -219,6 +270,9 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
             ],
           ],
         ),
+      ),
+      bottomNavigationBar: const CustomBottomNavBar(
+        currentTab: AppTab.services,
       ),
     );
   }

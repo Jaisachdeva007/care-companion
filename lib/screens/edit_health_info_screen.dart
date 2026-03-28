@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../services/firestore_service.dart';
+import '../widgets/custom_bottom_nav_bar.dart';
 
 class EditHealthInfoScreen extends StatefulWidget {
   const EditHealthInfoScreen({super.key});
@@ -234,6 +235,9 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
             color: Color(0xFF4F8CFF),
           ),
         ),
+        bottomNavigationBar: CustomBottomNavBar(
+          currentTab: AppTab.health,
+        ),
       );
     }
 
@@ -257,7 +261,7 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 520),
               child: Form(
@@ -324,7 +328,6 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
                             'Blood Group',
                             hintText: 'e.g. O+, A-, B+, AB+',
                           ),
-
                           buildSectionTitle('Important Medical Details'),
                           buildField(
                             importantInfoController,
@@ -353,7 +356,6 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
                             'Mobility Needs',
                             hintText: 'e.g. Walker, Wheelchair, Cane',
                           ),
-
                           buildSectionTitle('App Preferences'),
                           DropdownButtonFormField<String>(
                             initialValue: inputPreference,
@@ -383,7 +385,6 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
                             },
                           ),
                           const SizedBox(height: 16),
-
                           SwitchListTile(
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
@@ -412,7 +413,6 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
                             },
                           ),
                           const SizedBox(height: 12),
-
                           SwitchListTile(
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
@@ -440,9 +440,7 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
                               });
                             },
                           ),
-
                           const SizedBox(height: 24),
-
                           SizedBox(
                             width: double.infinity,
                             height: 54,
@@ -483,6 +481,9 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
             ),
           ),
         ),
+      ),
+      bottomNavigationBar: const CustomBottomNavBar(
+        currentTab: AppTab.health,
       ),
     );
   }

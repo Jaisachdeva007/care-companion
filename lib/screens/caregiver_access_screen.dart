@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../models/app_user.dart';
 import '../services/firestore_service.dart';
+import '../widgets/custom_bottom_nav_bar.dart';
 
 class CaregiverAccessScreen extends StatefulWidget {
   const CaregiverAccessScreen({super.key});
@@ -68,7 +69,6 @@ class _CaregiverAccessScreenState extends State<CaregiverAccessScreen> {
             child: const Icon(Icons.person, color: Color(0xFF4F8CFF)),
           ),
           const SizedBox(width: 12),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,7 +90,6 @@ class _CaregiverAccessScreenState extends State<CaregiverAccessScreen> {
               ],
             ),
           ),
-
           const Icon(Icons.check_circle, color: Colors.green),
         ],
       ),
@@ -106,14 +105,20 @@ class _CaregiverAccessScreenState extends State<CaregiverAccessScreen> {
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+            body: Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF4F8CFF),
+              ),
+            ),
+            bottomNavigationBar: CustomBottomNavBar(
+              currentTab: AppTab.profile,
+            ),
           );
         }
 
         final userData = snapshot.data!.data()!;
         final caregiverCode = (userData['caregiverCode'] ?? '').toString();
-        final linkedCaregiverUids =
-            _extractLinkedCaregiverUids(userData);
+        final linkedCaregiverUids = _extractLinkedCaregiverUids(userData);
 
         return Scaffold(
           backgroundColor: const Color(0xFFF5F7FB),
@@ -129,13 +134,10 @@ class _CaregiverAccessScreenState extends State<CaregiverAccessScreen> {
             elevation: 0,
             iconTheme: const IconThemeData(color: Color(0xFF1F2937)),
           ),
-
           body: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
             child: Column(
               children: [
-
-                // 🔹 CODE CARD
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
@@ -158,7 +160,6 @@ class _CaregiverAccessScreenState extends State<CaregiverAccessScreen> {
                         color: Color(0xFF4F8CFF),
                       ),
                       const SizedBox(height: 10),
-
                       const Text(
                         'Your Caregiver Code',
                         style: TextStyle(
@@ -166,9 +167,7 @@ class _CaregiverAccessScreenState extends State<CaregiverAccessScreen> {
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-
                       const SizedBox(height: 10),
-
                       Container(
                         padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
@@ -186,18 +185,14 @@ class _CaregiverAccessScreenState extends State<CaregiverAccessScreen> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 12),
-
                       Text(
                         '${linkedCaregiverUids.length} caregiver(s) linked',
                         style: const TextStyle(
                           color: Color(0xFF6B7280),
                         ),
                       ),
-
                       const SizedBox(height: 14),
-
                       SizedBox(
                         width: double.infinity,
                         height: 52,
@@ -213,8 +208,13 @@ class _CaregiverAccessScreenState extends State<CaregiverAccessScreen> {
                             ),
                           ),
                           child: _isGeneratingCode
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white,
+                              ? const SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
                                 )
                               : Text(
                                   caregiverCode.isEmpty
@@ -226,10 +226,7 @@ class _CaregiverAccessScreenState extends State<CaregiverAccessScreen> {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
-                // 🔹 CAREGIVERS LIST
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -248,7 +245,6 @@ class _CaregiverAccessScreenState extends State<CaregiverAccessScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-
                       if (linkedCaregiverUids.isEmpty)
                         const Text('No caregivers linked yet.')
                       else
@@ -257,13 +253,16 @@ class _CaregiverAccessScreenState extends State<CaregiverAccessScreen> {
                               .getUsersByUids(linkedCaregiverUids),
                           builder: (context, snapshot) {
                             if (!snapshot.hasData) {
-                              return const CircularProgressIndicator();
+                              return const Center(
+                                child: CircularProgressIndicator(
+                                  color: Color(0xFF4F8CFF),
+                                ),
+                              );
                             }
 
                             return Column(
-                              children: snapshot.data!
-                                  .map(_buildCaregiverTile)
-                                  .toList(),
+                              children:
+                                  snapshot.data!.map(_buildCaregiverTile).toList(),
                             );
                           },
                         ),
@@ -272,6 +271,9 @@ class _CaregiverAccessScreenState extends State<CaregiverAccessScreen> {
                 ),
               ],
             ),
+          ),
+          bottomNavigationBar: const CustomBottomNavBar(
+            currentTab: AppTab.profile,
           ),
         );
       },

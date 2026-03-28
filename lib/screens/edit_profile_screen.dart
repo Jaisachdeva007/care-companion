@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../services/firestore_service.dart';
+import '../widgets/custom_bottom_nav_bar.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -190,6 +191,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             color: Color(0xFF4F8CFF),
           ),
         ),
+        bottomNavigationBar: CustomBottomNavBar(
+          currentTab: AppTab.profile,
+        ),
       );
     }
 
@@ -211,7 +215,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 500),
               child: Form(
@@ -234,7 +238,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     children: [
                       buildSectionTitle('Personal Information'),
                       buildField(fullNameController, 'Full Name'),
-
                       DropdownButtonFormField<String>(
                         initialValue: selectedRole,
                         decoration: _inputDecoration('Role'),
@@ -257,7 +260,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         },
                       ),
                       const SizedBox(height: 14),
-
                       buildField(languageController, 'Language'),
                       buildField(
                         phoneController,
@@ -265,7 +267,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         keyboardType: TextInputType.phone,
                       ),
                       buildField(addressController, 'Address'),
-
                       buildSectionTitle('Emergency Contact'),
                       buildField(
                         emergencyNameController,
@@ -280,9 +281,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         emergencyRelationController,
                         'Emergency Contact Relation',
                       ),
-
                       const SizedBox(height: 24),
-
                       SizedBox(
                         width: double.infinity,
                         height: 54,
@@ -312,6 +311,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
           ),
         ),
+      ),
+      bottomNavigationBar: const CustomBottomNavBar(
+        currentTab: AppTab.profile,
       ),
     );
   }

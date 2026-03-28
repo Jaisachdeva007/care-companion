@@ -12,6 +12,7 @@ import 'login_screen.dart';
 import 'medication_list_screen.dart';
 import 'caregiver_access_screen.dart';
 import 'link_senior_screen.dart';
+import '../widgets/custom_bottom_nav_bar.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -349,6 +350,7 @@ class _HomeScreenState extends State<HomeScreen> {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
+          
         }
 
         if (!snapshot.hasData || snapshot.data?.data() == null) {
@@ -564,6 +566,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
+              ),
+                bottomNavigationBar: const CustomBottomNavBar(
+                currentTab: AppTab.home,
               ),
             );
           },

@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
 import '../services/firestore_service.dart';
+import '../widgets/custom_bottom_nav_bar.dart';
 import 'add_edit_medication_screen.dart';
 import 'medication_detail_screen.dart';
 
@@ -133,11 +135,11 @@ class MedicationListScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: Color(0x0F000000),
             blurRadius: 12,
-            offset: const Offset(0, 4),
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -331,36 +333,44 @@ class MedicationListScreen extends StatelessWidget {
         stream: FirestoreService().getMedicationsStream(uid),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF4F8CFF),
+              ),
+            );
           }
 
           final medications = snapshot.data ?? [];
 
           if (medications.isEmpty) {
-            return Center(
+            return const Center(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.fromLTRB(24, 24, 24, 120),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
                       Icons.medication_outlined,
                       size: 80,
-                      color: Colors.teal.shade300,
+                      color: Color(0xFF4F8CFF),
                     ),
-                    const SizedBox(height: 16),
-                    const Text(
+                    SizedBox(height: 16),
+                    Text(
                       'No medications yet',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
+                        color: Color(0xFF111827),
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    const Text(
+                    SizedBox(height: 10),
+                    Text(
                       'Tap the button below to add your first medication.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF6B7280),
+                      ),
                     ),
                   ],
                 ),
@@ -369,7 +379,7 @@ class MedicationListScreen extends StatelessWidget {
           }
 
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
             children: [
               _buildSummaryCard(medications),
               ...List.generate(medications.length, (index) {
@@ -393,17 +403,17 @@ class MedicationListScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
+                        boxShadow: const [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.06),
+                            color: Color(0x0F000000),
                             blurRadius: 12,
-                            offset: const Offset(0, 4),
+                            offset: Offset(0, 4),
                           ),
                         ],
                         border: Border.all(
                           color: med.isActive
-                              ? Colors.teal.shade100
-                              : Colors.grey.shade300,
+                              ? const Color(0xFFBFE0FF)
+                              : const Color(0xFFE5E7EB),
                         ),
                       ),
                       child: Row(
@@ -413,15 +423,15 @@ class MedicationListScreen extends StatelessWidget {
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: med.isActive
-                                  ? Colors.teal.shade50
-                                  : Colors.grey.shade200,
+                                  ? const Color(0xFFEFF4FF)
+                                  : const Color(0xFFF3F4F6),
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: Icon(
                               Icons.medication,
                               color: med.isActive
-                                  ? Colors.teal
-                                  : Colors.grey.shade600,
+                                  ? const Color(0xFF4F8CFF)
+                                  : const Color(0xFF6B7280),
                               size: 28,
                             ),
                           ),
@@ -435,34 +445,37 @@ class MedicationListScreen extends StatelessWidget {
                                   style: const TextStyle(
                                     fontSize: 19,
                                     fontWeight: FontWeight.bold,
+                                    color: Color(0xFF111827),
                                   ),
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
                                   med.dosage,
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontSize: 15,
-                                    color: Colors.grey.shade700,
+                                    color: Color(0xFF6B7280),
                                   ),
                                 ),
                                 const SizedBox(height: 10),
                                 Wrap(
                                   spacing: 8,
                                   runSpacing: 8,
-                                  children: med.scheduleTimes.map<Widget>((time) {
+                                  children:
+                                      med.scheduleTimes.map<Widget>((time) {
                                     return Container(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 10,
                                         vertical: 6,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Colors.teal.shade50,
+                                        color: const Color(0xFFEFF4FF),
                                         borderRadius: BorderRadius.circular(30),
                                       ),
                                       child: Text(
                                         time,
                                         style: const TextStyle(
                                           fontWeight: FontWeight.w600,
+                                          color: Color(0xFF2354B8),
                                         ),
                                       ),
                                     );
@@ -475,15 +488,15 @@ class MedicationListScreen extends StatelessWidget {
                                     vertical: 7,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.blueGrey.shade50,
+                                    color: const Color(0xFFF3F4F6),
                                     borderRadius: BorderRadius.circular(30),
                                   ),
                                   child: Text(
                                     formatRepeatDays(med.repeatDays),
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
-                                      color: Colors.blueGrey.shade700,
+                                      color: Color(0xFF4B5563),
                                     ),
                                   ),
                                 ),
@@ -500,23 +513,26 @@ class MedicationListScreen extends StatelessWidget {
                                 ),
                                 decoration: BoxDecoration(
                                   color: med.isActive
-                                      ? Colors.green.shade50
-                                      : Colors.red.shade50,
+                                      ? const Color(0xFFECFDF5)
+                                      : const Color(0xFFFEF2F2),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
                                   med.isActive ? 'Active' : 'Inactive',
                                   style: TextStyle(
                                     color: med.isActive
-                                        ? Colors.green.shade700
-                                        : Colors.red.shade700,
+                                        ? const Color(0xFF065F46)
+                                        : const Color(0xFFB91C1C),
                                     fontWeight: FontWeight.w600,
                                     fontSize: 12,
                                   ),
                                 ),
                               ),
                               const SizedBox(height: 14),
-                              const Icon(Icons.chevron_right),
+                              const Icon(
+                                Icons.chevron_right,
+                                color: Color(0xFF9CA3AF),
+                              ),
                             ],
                           ),
                         ],
@@ -530,6 +546,8 @@ class MedicationListScreen extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: const Color(0xFF4F8CFF),
+        foregroundColor: Colors.white,
         onPressed: () {
           Navigator.push(
             context,
@@ -540,6 +558,9 @@ class MedicationListScreen extends StatelessWidget {
         },
         icon: const Icon(Icons.add),
         label: const Text('Add Medication'),
+      ),
+      bottomNavigationBar: const CustomBottomNavBar(
+        currentTab: AppTab.health,
       ),
     );
   }
