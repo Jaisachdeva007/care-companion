@@ -24,11 +24,61 @@ class CustomBottomNavBar extends StatelessWidget {
     required this.currentTab,
   });
 
-  void _replaceScreen(BuildContext context, Widget screen) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => screen),
+  void _replaceScreen(
+    BuildContext context,
+    Widget screen, {
+    required Offset beginOffset,
+  }) {
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 420),
+        reverseTransitionDuration: const Duration(milliseconds: 320),
+        pageBuilder: (context, animation, secondaryAnimation) => screen,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeInOutCubic,
+          );
+
+          final slideAnimation = Tween<Offset>(
+            begin: beginOffset,
+            end: Offset.zero,
+          ).animate(curved);
+
+          final fadeAnimation = Tween<double>(
+            begin: 0.88,
+            end: 1.0,
+          ).animate(curved);
+
+          return FadeTransition(
+            opacity: fadeAnimation,
+            child: SlideTransition(
+              position: slideAnimation,
+              child: child,
+            ),
+          );
+        },
+      ),
     );
+  }
+
+  Offset _getSlideDirection(AppTab targetTab) {
+    const tabOrder = {
+      AppTab.services: 0,
+      AppTab.home: 1,
+      AppTab.health: 2,
+      AppTab.profile: 3,
+      AppTab.seniors: 2,
+    };
+
+    final currentIndex = tabOrder[currentTab] ?? 0;
+    final targetIndex = tabOrder[targetTab] ?? 0;
+
+    if (targetIndex > currentIndex) {
+      return const Offset(0.08, 0);
+    } else {
+      return const Offset(-0.08, 0);
+    }
   }
 
   Future<void> _handleCenterAction(
@@ -38,7 +88,11 @@ class CustomBottomNavBar extends StatelessWidget {
     required List<String> linkedCaregiverUids,
   }) async {
     if (isCaregiver) {
-      _replaceScreen(context, const LinkSeniorScreen());
+      _replaceScreen(
+        context,
+        const LinkSeniorScreen(),
+        beginOffset: const Offset(0, 0.08),
+      );
       return;
     }
 
@@ -175,40 +229,82 @@ class CustomBottomNavBar extends StatelessWidget {
         void goToTab(AppTab tab) {
           if (tab == currentTab) return;
 
+          final slideOffset = _getSlideDirection(tab);
+
           if (isCaregiver) {
             switch (tab) {
               case AppTab.services:
-                _replaceScreen(context, const EmergencyServicesScreen());
+                _replaceScreen(
+                  context,
+                  const EmergencyServicesScreen(),
+                  beginOffset: slideOffset,
+                );
                 break;
               case AppTab.home:
-                _replaceScreen(context, const HomeScreen());
+                _replaceScreen(
+                  context,
+                  const HomeScreen(),
+                  beginOffset: slideOffset,
+                );
                 break;
               case AppTab.seniors:
-                _replaceScreen(context, const LinkSeniorScreen());
+                _replaceScreen(
+                  context,
+                  const LinkSeniorScreen(),
+                  beginOffset: slideOffset,
+                );
                 break;
               case AppTab.profile:
-                _replaceScreen(context, const EditProfileScreen());
+                _replaceScreen(
+                  context,
+                  const EditProfileScreen(),
+                  beginOffset: slideOffset,
+                );
                 break;
               case AppTab.health:
-                _replaceScreen(context, const HomeScreen());
+                _replaceScreen(
+                  context,
+                  const HomeScreen(),
+                  beginOffset: slideOffset,
+                );
                 break;
             }
           } else {
             switch (tab) {
               case AppTab.services:
-                _replaceScreen(context, const EmergencyServicesScreen());
+                _replaceScreen(
+                  context,
+                  const EmergencyServicesScreen(),
+                  beginOffset: slideOffset,
+                );
                 break;
               case AppTab.home:
-                _replaceScreen(context, const HomeScreen());
+                _replaceScreen(
+                  context,
+                  const HomeScreen(),
+                  beginOffset: slideOffset,
+                );
                 break;
               case AppTab.health:
-                _replaceScreen(context, const EditHealthInfoScreen());
+                _replaceScreen(
+                  context,
+                  const EditHealthInfoScreen(),
+                  beginOffset: slideOffset,
+                );
                 break;
               case AppTab.profile:
-                _replaceScreen(context, const EditProfileScreen());
+                _replaceScreen(
+                  context,
+                  const EditProfileScreen(),
+                  beginOffset: slideOffset,
+                );
                 break;
               case AppTab.seniors:
-                _replaceScreen(context, const HomeScreen());
+                _replaceScreen(
+                  context,
+                  const HomeScreen(),
+                  beginOffset: slideOffset,
+                );
                 break;
             }
           }
@@ -286,7 +382,9 @@ class CustomBottomNavBar extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Container(
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeOutCubic,
                           height: 54,
                           width: 54,
                           decoration: BoxDecoration(
@@ -365,9 +463,10 @@ class _NavButton extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOut,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
         decoration: BoxDecoration(
@@ -381,21 +480,30 @@ class _NavButton extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              isSelected ? item.activeIcon : item.icon,
-              color: isSelected ? activeColor : inactiveColor,
-              size: isSelected ? 25 : 22,
+            AnimatedScale(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutBack,
+              scale: isSelected ? 1.06 : 1.0,
+              child: Icon(
+                isSelected ? item.activeIcon : item.icon,
+                color: isSelected ? activeColor : inactiveColor,
+                size: isSelected ? 25 : 22,
+              ),
             ),
             const SizedBox(height: 3),
             Flexible(
-              child: Text(
-                item.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              child: AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOut,
                 style: TextStyle(
                   fontSize: isSelected ? 12.5 : 11,
                   fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
                   color: isSelected ? activeColor : inactiveColor,
+                ),
+                child: Text(
+                  item.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),

@@ -14,12 +14,17 @@ import 'caregiver_access_screen.dart';
 import 'link_senior_screen.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  class HomeScreen extends StatefulWidget {
+    final bool showBottomNav;
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
+    const HomeScreen({
+      super.key,
+      this.showBottomNav = true,
+    });
+
+    @override
+    State<HomeScreen> createState() => _HomeScreenState();
+  }
 
 class _HomeScreenState extends State<HomeScreen> {
   final FirestoreService _firestoreService = FirestoreService();
