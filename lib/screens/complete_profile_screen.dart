@@ -76,6 +76,35 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     }
   }
 
+  InputDecoration _inputDecoration(String label, {String? hint}) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 18,
+        vertical: 18,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(
+          color: Color(0xFF4F8CFF),
+          width: 1.5,
+        ),
+      ),
+    );
+  }
+
   Widget buildField(
     TextEditingController controller,
     String label, {
@@ -83,7 +112,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     TextInputType? keyboardType,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
@@ -94,9 +123,23 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
           }
           return null;
         },
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
+        decoration: _inputDecoration(label),
+      ),
+    );
+  }
+
+  Widget buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12, top: 8),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1F2937),
+          ),
         ),
       ),
     );
@@ -117,107 +160,184 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Complete Profile')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              buildField(fullNameController, 'Full Name'),
-
-              DropdownButtonFormField<String>(
-                initialValue: selectedRole,
-                decoration: const InputDecoration(
-                  labelText: 'Role',
-                  border: OutlineInputBorder(),
-                ),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'senior',
-                    child: Text('Senior'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'caregiver',
-                    child: Text('Caregiver'),
-                  ),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      selectedRole = value;
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 12),
-
-              buildField(
-                phoneController,
-                'Phone',
-                requiredField: false,
-                keyboardType: TextInputType.phone,
-              ),
-
-              if (isSenior) ...[
-                buildField(languageController, 'Language'),
-                buildField(addressController, 'Address'),
-
-                const SizedBox(height: 12),
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Emergency Contact',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+      backgroundColor: const Color(0xFFF5F7FB),
+      appBar: AppBar(
+        title: const Text(
+          'Complete Profile',
+          style: TextStyle(
+            color: Color(0xFF1F2937),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        backgroundColor: const Color(0xFFF5F7FB),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        iconTheme: const IconThemeData(color: Color(0xFF1F2937)),
+      ),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    const Icon(
+                      Icons.badge_rounded,
+                      size: 68,
+                      color: Color(0xFF4F8CFF),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 10),
+                    const SizedBox(height: 14),
+                    const Text(
+                      'Set up your profile',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'A few details will help personalize your Care Companion experience.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF6B7280),
+                      ),
+                    ),
+                    const SizedBox(height: 28),
 
-                buildField(emergencyNameController, 'Emergency Contact Name'),
-                buildField(
-                  emergencyPhoneController,
-                  'Emergency Contact Phone',
-                  keyboardType: TextInputType.phone,
-                ),
-                buildField(
-                  emergencyRelationController,
-                  'Emergency Contact Relation',
-                ),
-              ] else ...[
-                const SizedBox(height: 8),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text(
-                    'Caregivers only need a basic profile. You can link seniors after login using their caregiver code.',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                ),
-              ],
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x0F000000),
+                            blurRadius: 18,
+                            offset: Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          buildSectionTitle('Personal Information'),
+                          buildField(fullNameController, 'Full Name'),
 
-              const SizedBox(height: 20),
+                          DropdownButtonFormField<String>(
+                            initialValue: selectedRole,
+                            decoration: _inputDecoration('Role'),
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'senior',
+                                child: Text('Senior'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'caregiver',
+                                child: Text('Caregiver'),
+                              ),
+                            ],
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() {
+                                  selectedRole = value;
+                                });
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 14),
 
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: isLoading ? null : saveProfile,
-                  child: isLoading
-                      ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Save Profile'),
+                          buildField(
+                            phoneController,
+                            'Phone',
+                            requiredField: false,
+                            keyboardType: TextInputType.phone,
+                          ),
+
+                          if (isSenior) ...[
+                            buildSectionTitle('Senior Details'),
+                            buildField(languageController, 'Language'),
+                            buildField(addressController, 'Address'),
+
+                            buildSectionTitle('Emergency Contact'),
+                            buildField(
+                              emergencyNameController,
+                              'Emergency Contact Name',
+                            ),
+                            buildField(
+                              emergencyPhoneController,
+                              'Emergency Contact Phone',
+                              keyboardType: TextInputType.phone,
+                            ),
+                            buildField(
+                              emergencyRelationController,
+                              'Emergency Contact Relation',
+                            ),
+                          ] else ...[
+                            const SizedBox(height: 8),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEFF6FF),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: const Text(
+                                'Caregivers only need a basic profile for now. You can link seniors after logging in using their caregiver code.',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF1F2937),
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                          ],
+
+                          const SizedBox(height: 24),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 54,
+                            child: ElevatedButton(
+                              onPressed: isLoading ? null : saveProfile,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF4F8CFF),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                              ),
+                              child: isLoading
+                                  ? const SizedBox(
+                                      height: 22,
+                                      width: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Save Profile',
+                                      style: TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),

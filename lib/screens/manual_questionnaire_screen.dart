@@ -82,22 +82,72 @@ class _ManualQuestionnaireScreenState
     }
   }
 
-  Widget buildField(TextEditingController controller, String label) {
+  InputDecoration _inputDecoration(String label, {String? hint}) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 18,
+        vertical: 18,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(
+          color: Color(0xFF4F8CFF),
+          width: 1.5,
+        ),
+      ),
+    );
+  }
+
+  Widget buildField(
+    TextEditingController controller,
+    String label, {
+    String? hint,
+    bool requiredField = false,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
         controller: controller,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
         validator: (value) {
-          if (label == 'Preferred Name' || label == 'Age') {
-            if (value == null || value.trim().isEmpty) {
-              return 'Please enter $label';
-            }
+          if (requiredField && (value == null || value.trim().isEmpty)) {
+            return 'Please enter $label';
           }
           return null;
         },
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
+        decoration: _inputDecoration(label, hint: hint),
+      ),
+    );
+  }
+
+  Widget buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12, top: 8),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1F2937),
+          ),
         ),
       ),
     );
@@ -117,85 +167,226 @@ class _ManualQuestionnaireScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FB),
       appBar: AppBar(
-        title: const Text('Manual Questionnaire'),
+        title: const Text(
+          'Manual Questionnaire',
+          style: TextStyle(
+            color: Color(0xFF1F2937),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        backgroundColor: const Color(0xFFF5F7FB),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        iconTheme: const IconThemeData(color: Color(0xFF1F2937)),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              buildField(preferredNameController, 'Preferred Name'),
-              buildField(ageController, 'Age'),
-              buildField(
-                conditionsController,
-                'Health Conditions (comma separated)',
-              ),
-              buildField(
-                allergiesController,
-                'Allergies (comma separated)',
-              ),
-              buildField(
-                medicationsController,
-                'Medications (comma separated)',
-              ),
-              buildField(mobilityNeedsController, 'Mobility Needs'),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    const Icon(
+                      Icons.assignment_rounded,
+                      size: 68,
+                      color: Color(0xFF4F8CFF),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      'Tell us a little about your care needs',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Fill in the form below so we can personalize your experience.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF6B7280),
+                      ),
+                    ),
+                    const SizedBox(height: 28),
 
-              DropdownButtonFormField<String>(
-                initialValue: inputPreference,
-                decoration: const InputDecoration(
-                  labelText: 'Preferred Input Method',
-                  border: OutlineInputBorder(),
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x0F000000),
+                            blurRadius: 18,
+                            offset: Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          buildSectionTitle('Basic Information'),
+                          buildField(
+                            preferredNameController,
+                            'Preferred Name',
+                            requiredField: true,
+                          ),
+                          buildField(
+                            ageController,
+                            'Age',
+                            requiredField: true,
+                            keyboardType: TextInputType.number,
+                          ),
+
+                          buildSectionTitle('Health Information'),
+                          buildField(
+                            conditionsController,
+                            'Health Conditions',
+                            hint: 'Example: Diabetes, Arthritis',
+                          ),
+                          buildField(
+                            allergiesController,
+                            'Allergies',
+                            hint: 'Example: Peanuts, Penicillin',
+                          ),
+                          buildField(
+                            medicationsController,
+                            'Medications',
+                            hint: 'Example: Metformin, Vitamin D',
+                          ),
+                          buildField(
+                            mobilityNeedsController,
+                            'Mobility Needs',
+                            hint: 'Example: Walker, Wheelchair, None',
+                          ),
+
+                          buildSectionTitle('Preferences'),
+                          DropdownButtonFormField<String>(
+                            initialValue: inputPreference,
+                            decoration: _inputDecoration(
+                              'Preferred Input Method',
+                            ),
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'manual',
+                                child: Text('Manual'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'voice',
+                                child: Text('Voice'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'guided',
+                                child: Text('Guided'),
+                              ),
+                            ],
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() {
+                                  inputPreference = value;
+                                });
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          SwitchListTile(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            tileColor: const Color(0xFFF9FAFB),
+                            title: const Text(
+                              'Enable Voice Assistant',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1F2937),
+                              ),
+                            ),
+                            subtitle: const Text(
+                              'Use spoken guidance and voice help.',
+                            ),
+                            value: voiceAssistantEnabled,
+                            activeColor: const Color(0xFF4F8CFF),
+                            onChanged: (value) {
+                              setState(() {
+                                voiceAssistantEnabled = value;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 12),
+
+                          SwitchListTile(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            tileColor: const Color(0xFFF9FAFB),
+                            title: const Text(
+                              'Enable Large Text',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1F2937),
+                              ),
+                            ),
+                            subtitle: const Text(
+                              'Increase readability across the app.',
+                            ),
+                            value: largeTextEnabled,
+                            activeColor: const Color(0xFF4F8CFF),
+                            onChanged: (value) {
+                              setState(() {
+                                largeTextEnabled = value;
+                              });
+                            },
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 54,
+                            child: ElevatedButton(
+                              onPressed: isLoading ? null : saveQuestionnaire,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF4F8CFF),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                              ),
+                              child: isLoading
+                                  ? const SizedBox(
+                                      height: 22,
+                                      width: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Save Questionnaire',
+                                      style: TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                items: const [
-                  DropdownMenuItem(value: 'manual', child: Text('Manual')),
-                  DropdownMenuItem(value: 'voice', child: Text('Voice')),
-                  DropdownMenuItem(value: 'guided', child: Text('Guided')),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      inputPreference = value;
-                    });
-                  }
-                },
               ),
-
-              const SizedBox(height: 16),
-
-              SwitchListTile(
-                title: const Text('Enable Voice Assistant'),
-                value: voiceAssistantEnabled,
-                onChanged: (value) {
-                  setState(() {
-                    voiceAssistantEnabled = value;
-                  });
-                },
-              ),
-
-              SwitchListTile(
-                title: const Text('Enable Large Text'),
-                value: largeTextEnabled,
-                onChanged: (value) {
-                  setState(() {
-                    largeTextEnabled = value;
-                  });
-                },
-              ),
-
-              const SizedBox(height: 20),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: isLoading ? null : saveQuestionnaire,
-                  child: isLoading
-                      ? const CircularProgressIndicator()
-                      : const Text('Save Questionnaire'),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

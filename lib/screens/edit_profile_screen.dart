@@ -50,11 +50,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         }
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Could not load profile: $e')),
       );
     }
 
+    if (!mounted) return;
     setState(() {
       isLoading = false;
     });
@@ -90,26 +92,77 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       Navigator.pop(context);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Could not update profile: $e')),
       );
     }
   }
 
-  Widget buildField(TextEditingController controller, String label) {
+  InputDecoration _inputDecoration(String label, {String? hint}) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 18,
+        vertical: 18,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(
+          color: Color(0xFF4F8CFF),
+          width: 1.5,
+        ),
+      ),
+    );
+  }
+
+  Widget buildField(
+    TextEditingController controller,
+    String label, {
+    bool requiredField = true,
+    TextInputType? keyboardType,
+  }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
         controller: controller,
+        keyboardType: keyboardType,
         validator: (value) {
+          if (!requiredField) return null;
           if (value == null || value.trim().isEmpty) {
             return 'Please enter $label';
           }
           return null;
         },
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
+        decoration: _inputDecoration(label),
+      ),
+    );
+  }
+
+  Widget buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12, top: 8),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1F2937),
+          ),
         ),
       ),
     );
@@ -131,70 +184,132 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     if (isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        backgroundColor: Color(0xFFF5F7FB),
+        body: Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFF4F8CFF),
+          ),
+        ),
       );
     }
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FB),
       appBar: AppBar(
-        title: const Text('Update My Info'),
+        title: const Text(
+          'Update My Info',
+          style: TextStyle(
+            color: Color(0xFF1F2937),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        backgroundColor: const Color(0xFFF5F7FB),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        iconTheme: const IconThemeData(color: Color(0xFF1F2937)),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              buildField(fullNameController, 'Full Name'),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: Form(
+                key: _formKey,
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x0F000000),
+                        blurRadius: 18,
+                        offset: Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      buildSectionTitle('Personal Information'),
+                      buildField(fullNameController, 'Full Name'),
 
-              DropdownButtonFormField<String>(
-                initialValue: selectedRole,
-                decoration: const InputDecoration(
-                  labelText: 'Role',
-                  border: OutlineInputBorder(),
+                      DropdownButtonFormField<String>(
+                        initialValue: selectedRole,
+                        decoration: _inputDecoration('Role'),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'senior',
+                            child: Text('Senior'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'caregiver',
+                            child: Text('Caregiver'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              selectedRole = value;
+                            });
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 14),
+
+                      buildField(languageController, 'Language'),
+                      buildField(
+                        phoneController,
+                        'Phone',
+                        keyboardType: TextInputType.phone,
+                      ),
+                      buildField(addressController, 'Address'),
+
+                      buildSectionTitle('Emergency Contact'),
+                      buildField(
+                        emergencyNameController,
+                        'Emergency Contact Name',
+                      ),
+                      buildField(
+                        emergencyPhoneController,
+                        'Emergency Contact Phone',
+                        keyboardType: TextInputType.phone,
+                      ),
+                      buildField(
+                        emergencyRelationController,
+                        'Emergency Contact Relation',
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 54,
+                        child: ElevatedButton(
+                          onPressed: saveProfile,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF4F8CFF),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                          child: const Text(
+                            'Save Changes',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                items: const [
-                  DropdownMenuItem(value: 'senior', child: Text('Senior')),
-                  DropdownMenuItem(value: 'caregiver', child: Text('Caregiver')),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      selectedRole = value;
-                    });
-                  }
-                },
               ),
-              const SizedBox(height: 12),
-
-              buildField(languageController, 'Language'),
-              buildField(phoneController, 'Phone'),
-              buildField(addressController, 'Address'),
-
-              const SizedBox(height: 12),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Emergency Contact',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              buildField(emergencyNameController, 'Emergency Contact Name'),
-              buildField(emergencyPhoneController, 'Emergency Contact Phone'),
-              buildField(emergencyRelationController, 'Emergency Contact Relation'),
-
-              const SizedBox(height: 20),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: saveProfile,
-                  child: const Text('Save Changes'),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

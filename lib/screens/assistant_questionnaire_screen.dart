@@ -35,37 +35,37 @@ class _AssistantQuestionnaireScreenState
   final List<Map<String, String>> _questions = [
     {
       'key': 'preferredName',
-      'question': 'Hi, what name would you like me to call you?'
+      'question': 'Hi, what name would you like me to call you?',
     },
     {
       'key': 'age',
-      'question': 'What is your age?'
+      'question': 'What is your age?',
     },
     {
       'key': 'healthConditions',
-      'question': 'Do you have any health conditions I should know about?'
+      'question': 'Do you have any health conditions I should know about?',
     },
     {
       'key': 'allergies',
-      'question': 'Do you have any allergies?'
+      'question': 'Do you have any allergies?',
     },
     {
       'key': 'medications',
-      'question': 'What medications are you taking?'
+      'question': 'What medications are you taking?',
     },
     {
       'key': 'mobilityNeeds',
       'question':
-          'Do you use any mobility support, like a walker, wheelchair, cane, or something else?'
+          'Do you use any mobility support, like a walker, wheelchair, cane, or something else?',
     },
     {
       'key': 'largeTextEnabled',
-      'question': 'Would you like larger text in the app? Please say yes or no.'
+      'question': 'Would you like larger text in the app? Please say yes or no.',
     },
     {
       'key': 'voiceAssistantEnabled',
       'question':
-          'Would you like voice guidance in the app? Please say yes or no.'
+          'Would you like voice guidance in the app? Please say yes or no.',
     },
   ];
 
@@ -222,21 +222,21 @@ class _AssistantQuestionnaireScreenState
       });
 
       await _speech.listen(
-      onResult: (result) {
-        if (!mounted) return;
-        setState(() {
-          _currentTranscript = result.recognizedWords;
-        });
-      },
-      listenOptions: stt.SpeechListenOptions(
-        listenMode: stt.ListenMode.confirmation,
-        partialResults: true,
-        autoPunctuation: false,
-        cancelOnError: true,
-      ),
-      pauseFor: const Duration(seconds: 2),
-      listenFor: const Duration(seconds: 8),
-    );
+        onResult: (result) {
+          if (!mounted) return;
+          setState(() {
+            _currentTranscript = result.recognizedWords;
+          });
+        },
+        listenOptions: stt.SpeechListenOptions(
+          listenMode: stt.ListenMode.confirmation,
+          partialResults: true,
+          autoPunctuation: false,
+          cancelOnError: true,
+        ),
+        pauseFor: const Duration(seconds: 2),
+        listenFor: const Duration(seconds: 8),
+      );
     } catch (e) {
       debugPrint('Start listening error: $e');
       if (!mounted) return;
@@ -369,6 +369,7 @@ class _AssistantQuestionnaireScreenState
     setState(() {
       _currentTranscript = _manualCorrectionController.text.trim();
       _showManualCorrection = false;
+      _awaitingConfirmation = true;
     });
   }
 
@@ -421,6 +422,40 @@ class _AssistantQuestionnaireScreenState
     }
   }
 
+  InputDecoration _inputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(
+        color: Color(0xFF9CA3AF),
+      ),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 18,
+        vertical: 18,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(
+          color: Color(0xFFE5E7EB),
+        ),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(
+          color: Color(0xFFE5E7EB),
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(
+          color: Color(0xFF4F8CFF),
+          width: 1.5,
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     try {
@@ -442,173 +477,321 @@ class _AssistantQuestionnaireScreenState
         'Question ${_currentQuestionIndex + 1} of ${_questions.length}';
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FB),
       appBar: AppBar(
-        title: const Text('Talk to Care Companion'),
+        title: const Text(
+          'Voice Assistant',
+          style: TextStyle(
+            color: Color(0xFF1F2937),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        backgroundColor: const Color(0xFFF5F7FB),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        iconTheme: const IconThemeData(color: Color(0xFF1F2937)),
       ),
       body: _isInitializing
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  Text(
-                    stepLabel,
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 16),
-                  LinearProgressIndicator(
-                    value: (_currentQuestionIndex + 1) / _questions.length,
-                  ),
-                  const SizedBox(height: 28),
-                  Text(
-                    question,
-                    style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.teal.shade200),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      _currentTranscript.isEmpty
-                          ? 'Your spoken answer will appear here.'
-                          : _currentTranscript,
-                      style: const TextStyle(fontSize: 18),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  if (!_awaitingConfirmation) ...[
-                    Row(
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF4F8CFF),
+              ),
+            )
+          : SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 500),
+                    child: Column(
                       children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: _isListening ? null : _startListening,
-                            icon: const Icon(Icons.mic),
-                            label: Text(
-                              _isListening ? 'Listening...' : 'Start Talking',
+                        const Icon(
+                          Icons.smart_toy_rounded,
+                          size: 68,
+                          color: Color(0xFF4F8CFF),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          stepLabel,
+                          style: const TextStyle(
+                            color: Color(0xFF6B7280),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        LinearProgressIndicator(
+                          value: (_currentQuestionIndex + 1) / _questions.length,
+                          backgroundColor: const Color(0xFFE5E7EB),
+                          color: const Color(0xFF4F8CFF),
+                          minHeight: 6,
+                        ),
+                        const SizedBox(height: 28),
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: const Color(0xFFE5E7EB),
                             ),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x0F000000),
+                                blurRadius: 18,
+                                offset: Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                question,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF1F2937),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(18),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF9FAFB),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: const Color(0xFFE5E7EB),
+                                  ),
+                                ),
+                                child: Text(
+                                  _currentTranscript.isEmpty
+                                      ? 'Your answer will appear here...'
+                                      : _currentTranscript,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    color: Color(0xFF374151),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              if (!_awaitingConfirmation) ...[
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 52,
+                                  child: ElevatedButton.icon(
+                                    onPressed: _isListening ? null : _startListening,
+                                    icon: const Icon(Icons.mic),
+                                    label: Text(
+                                      _isListening
+                                          ? 'Listening...'
+                                          : 'Start Talking',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF4F8CFF),
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 50,
+                                  child: OutlinedButton.icon(
+                                    onPressed: _speakCurrentQuestion,
+                                    icon: const Icon(Icons.volume_up),
+                                    label: const Text('Repeat Question'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: const Color(0xFF4F8CFF),
+                                      side: const BorderSide(
+                                        color: Color(0xFF4F8CFF),
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                if (_isListening) ...[
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 50,
+                                    child: OutlinedButton.icon(
+                                      onPressed: _stopListening,
+                                      icon: const Icon(Icons.stop_circle_outlined),
+                                      label: const Text('Stop Listening'),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: const Color(0xFFEF4444),
+                                        side: const BorderSide(
+                                          color: Color(0xFFEF4444),
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                              if (_awaitingConfirmation) ...[
+                                const SizedBox(height: 12),
+                                const Text(
+                                  'Is this correct?',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                    color: Color(0xFF1F2937),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 52,
+                                  child: ElevatedButton(
+                                    onPressed: _confirmAnswer,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF4F8CFF),
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    child: const Text('Yes, Continue'),
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 50,
+                                  child: OutlinedButton(
+                                    onPressed: _retryAnswer,
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: const Color(0xFF4F8CFF),
+                                      side: const BorderSide(
+                                        color: Color(0xFF4F8CFF),
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    child: const Text('Try Again'),
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 50,
+                                  child: OutlinedButton(
+                                    onPressed: _useManualCorrection,
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: const Color(0xFF4F8CFF),
+                                      side: const BorderSide(
+                                        color: Color(0xFF4F8CFF),
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    child: const Text('Type Instead'),
+                                  ),
+                                ),
+                                if (_questions[_currentQuestionIndex]['key'] ==
+                                    'preferredName') ...[
+                                  const SizedBox(height: 10),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 50,
+                                    child: OutlinedButton(
+                                      onPressed: _spellNameMode,
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: const Color(0xFF4F8CFF),
+                                        side: const BorderSide(
+                                          color: Color(0xFF4F8CFF),
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                      ),
+                                      child: const Text('Spell My Name'),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                              if (_showManualCorrection) ...[
+                                const SizedBox(height: 16),
+                                TextField(
+                                  controller: _manualCorrectionController,
+                                  decoration: _inputDecoration('Type your answer'),
+                                ),
+                                const SizedBox(height: 10),
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 50,
+                                  child: ElevatedButton(
+                                    onPressed: _saveManualCorrection,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF4F8CFF),
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    child: const Text('Use This Answer'),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: _speakCurrentQuestion,
-                            icon: const Icon(Icons.volume_up),
-                            label: const Text('Repeat Question'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-
-                  if (_awaitingConfirmation) ...[
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Please confirm your answer',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
                           child: ElevatedButton(
-                            onPressed: _confirmAnswer,
-                            child: const Text('Yes, Continue'),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: _retryAnswer,
-                            child: const Text('No, Try Again'),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: _useManualCorrection,
-                            child: const Text('Type Correction'),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (_questions[_currentQuestionIndex]['key'] ==
-                        'preferredName') ...[
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: _spellNameMode,
-                              child: const Text('Spell My Name'),
+                            onPressed: (_isSaving || _awaitingConfirmation)
+                                ? null
+                                : _nextQuestion,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF4F8CFF),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
-
-                  if (_showManualCorrection) ...[
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _manualCorrectionController,
-                      decoration: const InputDecoration(
-                        labelText: 'Correct your answer',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: _saveManualCorrection,
-                            child: const Text('Use This Answer'),
+                            child: _isSaving
+                                ? const SizedBox(
+                                    height: 22,
+                                    width: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Text(
+                                    _currentQuestionIndex == _questions.length - 1
+                                        ? 'Finish Setup'
+                                        : 'Next Question',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                           ),
                         ),
                       ],
-                    ),
-                  ],
-
-                  const Spacer(),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: (_isSaving || _awaitingConfirmation)
-                          ? null
-                          : _nextQuestion,
-                      child: _isSaving
-                          ? const CircularProgressIndicator()
-                          : Text(
-                              _currentQuestionIndex == _questions.length - 1
-                                  ? 'Finish Setup'
-                                  : 'Next Question',
-                            ),
                     ),
                   ),
-                ],
+                ),
               ),
             ),
     );
