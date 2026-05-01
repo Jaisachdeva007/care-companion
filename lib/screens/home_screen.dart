@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -13,6 +14,7 @@ import 'login_screen.dart';
 import 'medication_list_screen.dart';
 import 'caregiver_access_screen.dart';
 import 'link_senior_screen.dart';
+import 'senior_detail_screen.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 
   class HomeScreen extends StatefulWidget {
@@ -1627,51 +1629,69 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSeniorListTile(AppUser senior) {
-    String emergencyContact = 'Not added';
-    if (senior.emergencyContacts.isNotEmpty) {
-      final first = senior.emergencyContacts.first;
-      final name = (first['name'] ?? '').toString();
-      final phone = (first['phone'] ?? '').toString();
-
-      if (name.isNotEmpty || phone.isNotEmpty) {
-        emergencyContact = phone.isEmpty ? name : '$name  •  $phone';
-      }
-    }
-
-    final allergies =
-        senior.allergies.isEmpty ? 'Not added' : senior.allergies.join(', ');
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            senior.fullName.isEmpty ? 'Unnamed Senior' : senior.fullName,
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF111827),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => SeniorDetailScreen(senior: senior),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF9FAFB),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: const Color(0xFFEFF4FF),
+              backgroundImage: senior.photoBase64.isNotEmpty
+                  ? MemoryImage(base64Decode(senior.photoBase64))
+                  : null,
+              child: senior.photoBase64.isEmpty
+                  ? const Icon(
+                      Icons.person_rounded,
+                      size: 24,
+                      color: Color(0xFF4F8CFF),
+                    )
+                  : null,
             ),
-          ),
-          const SizedBox(height: 8),
-          _buildInlineInfo(
-            'Phone',
-            senior.phone.isEmpty ? 'Not added' : senior.phone,
-          ),
-          _buildInlineInfo(
-            'Address',
-            senior.address.isEmpty ? 'Not added' : senior.address,
-          ),
-          _buildInlineInfo('Allergies', allergies),
-          _buildInlineInfo('Emergency Contact', emergencyContact),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    senior.fullName.isEmpty ? 'Unnamed Senior' : senior.fullName,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    senior.phone.isEmpty ? 'No phone' : senior.phone,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right,
+              color: Color(0xFF9CA3AF),
+            ),
+          ],
+        ),
       ),
     );
   }

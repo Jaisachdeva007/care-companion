@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../services/firestore_service.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 
@@ -24,6 +26,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   bool isLoading = true;
   String selectedRole = 'senior';
+  String _photoBase64 = '';
 
   @override
   void initState() {
@@ -42,6 +45,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         phoneController.text = appUser.phone;
         addressController.text = appUser.address;
         selectedRole = appUser.role;
+        _photoBase64 = appUser.photoBase64;
 
         if (appUser.emergencyContacts.isNotEmpty) {
           final contact = appUser.emergencyContacts.first;
@@ -61,6 +65,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() {
       isLoading = false;
     });
+  }
+
+  Future<void> _pickPhoto() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 40,
+      maxWidth: 300,
+      maxHeight: 300,
+    );
+    if (image == null) return;
+    final bytes = await image.readAsBytes();
+    setState(() => _photoBase64 = base64Encode(bytes));
   }
 
   Future<void> saveProfile() async {
@@ -83,6 +100,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             'relation': emergencyRelationController.text.trim(),
           }
         ],
+        photoBase64: _photoBase64,
       );
 
       if (!mounted) return;
@@ -181,6 +199,48 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
+  Widget _buildPhotoSection() {
+    return GestureDetector(
+      onTap: _pickPhoto,
+      child: Column(
+        children: [
+          Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              CircleAvatar(
+                radius: 48,
+                backgroundColor: const Color(0xFFEFF4FF),
+                backgroundImage: _photoBase64.isNotEmpty
+                    ? MemoryImage(base64Decode(_photoBase64))
+                    : null,
+                child: _photoBase64.isEmpty
+                    ? const Icon(
+                        Icons.person_rounded,
+                        size: 48,
+                        color: Color(0xFF4F8CFF),
+                      )
+                    : null,
+              ),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF4F8CFF),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Tap to change photo',
+            style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
@@ -236,6 +296,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   child: Column(
                     children: [
+                      _buildPhotoSection(),
+                      const SizedBox(height: 8),
                       buildSectionTitle('Personal Information'),
                       buildField(fullNameController, 'Full Name'),
                       DropdownButtonFormField<String>(
