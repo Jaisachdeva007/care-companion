@@ -25,6 +25,7 @@ class AppUser {
   final bool voiceAssistantEnabled;
   final bool largeTextEnabled;
   final bool questionnaireCompleted;
+  final String photoBase64;
 
   AppUser({
     required this.uid,
@@ -51,6 +52,7 @@ class AppUser {
     required this.voiceAssistantEnabled,
     required this.largeTextEnabled,
     required this.questionnaireCompleted,
+    this.photoBase64 = '',
   });
 
   factory AppUser.fromMap(Map<String, dynamic> map) {
@@ -96,6 +98,7 @@ class AppUser {
       voiceAssistantEnabled: map['voiceAssistantEnabled'] ?? false,
       largeTextEnabled: map['largeTextEnabled'] ?? false,
       questionnaireCompleted: map['questionnaireCompleted'] ?? false,
+      photoBase64: map['photoBase64'] ?? '',
     );
   }
 
@@ -125,6 +128,7 @@ class AppUser {
       'voiceAssistantEnabled': voiceAssistantEnabled,
       'largeTextEnabled': largeTextEnabled,
       'questionnaireCompleted': questionnaireCompleted,
+      'photoBase64': photoBase64,
     };
   }
 }
