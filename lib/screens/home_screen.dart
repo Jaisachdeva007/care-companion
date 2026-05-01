@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/alert_item.dart';
 import '../models/app_user.dart';
@@ -451,8 +452,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
                     ListTile(
-                      leading: const Icon(Icons.edit),
-                      title: const Text('Update My Info'),
+                      leading: const Icon(Icons.person_outline),
+                      title: const Text('Profile'),
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.push(
@@ -704,12 +705,14 @@ class _HomeScreenState extends State<HomeScreen> {
     final bloodGroup = (userData['bloodGroup'] ?? 'Not added').toString();
 
     String emergencyContact = 'Not added';
+    String emergencyPhone = '';
     final contacts = userData['emergencyContacts'];
 
     if (contacts is List && contacts.isNotEmpty) {
       final first = contacts.first;
       final name = (first['name'] ?? '').toString();
       final phone = (first['phone'] ?? '').toString();
+      emergencyPhone = phone;
 
       if (name.isNotEmpty || phone.isNotEmpty) {
         emergencyContact = phone.isEmpty ? name : '$name  •  $phone';
@@ -825,6 +828,9 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icons.call_outlined,
             title: 'Emergency Contact',
             value: emergencyContact,
+            onTap: emergencyPhone.isNotEmpty
+                ? () => launchUrl(Uri(scheme: 'tel', path: emergencyPhone))
+                : null,
           ),
           const SizedBox(height: 10),
           _buildSoftInfoTile(
@@ -875,8 +881,9 @@ class _HomeScreenState extends State<HomeScreen> {
     required IconData icon,
     required String title,
     required String value,
+    VoidCallback? onTap,
   }) {
-    return Container(
+    final tile = Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -926,9 +933,20 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
+          if (onTap != null)
+            const Icon(
+              Icons.phone_forwarded_outlined,
+              size: 18,
+              color: Color(0xFF4F8CFF),
+            ),
         ],
       ),
     );
+
+    if (onTap != null) {
+      return GestureDetector(onTap: onTap, child: tile);
+    }
+    return tile;
   }
 
   Widget _buildSeniorCaregiverCard({
