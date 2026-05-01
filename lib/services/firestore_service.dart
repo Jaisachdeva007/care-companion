@@ -58,6 +58,7 @@ class FirestoreService {
     required List<Map<String, dynamic>> emergencyContacts,
     String bloodGroup = '',
     String importantInfo = '',
+    String photoBase64 = '',
   }) async {
     await _db.collection('users').doc(uid).update({
       'fullName': fullName,
@@ -69,6 +70,7 @@ class FirestoreService {
       'bloodGroup': bloodGroup,
       'importantInfo': importantInfo,
       'profileCompleted': true,
+      if (photoBase64.isNotEmpty) 'photoBase64': photoBase64,
       if (role == 'caregiver') 'questionnaireCompleted': true,
     });
   }
