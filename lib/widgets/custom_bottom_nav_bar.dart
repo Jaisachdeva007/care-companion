@@ -109,9 +109,12 @@ class CustomBottomNavBar extends StatelessWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Send SOS alert?'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text('Send alert?'),
           content: const Text(
-            'This will send a Check on Me alert to your linked caregiver(s).',
+            'Your caregiver(s) will be notified immediately to check on you.',
           ),
           actions: [
             TextButton(
@@ -119,6 +122,13 @@ class CustomBottomNavBar extends StatelessWidget {
               child: const Text('Cancel'),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFDC2626),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               onPressed: () => Navigator.pop(dialogContext, true),
               child: const Text('Send Alert'),
             ),
