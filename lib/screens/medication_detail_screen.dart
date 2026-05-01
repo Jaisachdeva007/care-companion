@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import '../models/medication.dart';
 import '../services/firestore_service.dart';
 import 'add_edit_medication_screen.dart';
@@ -17,17 +18,65 @@ class MedicationDetailScreen extends StatefulWidget {
 class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
   Medication? medication;
   bool isLoading = true;
-
-  String formatRepeatDays(List<String> days) {
-    if (days.isEmpty) return 'No repeat days set';
-    if (days.length == 7) return 'Every day';
-    return days.join(', ');
-  }
+  bool _isSpeaking = false;
+  final FlutterTts _tts = FlutterTts();
 
   @override
   void initState() {
     super.initState();
+    _tts.setLanguage('en-US');
+    _tts.setSpeechRate(0.45);
+    _tts.setCompletionHandler(() {
+      if (mounted) setState(() => _isSpeaking = false);
+    });
     loadMedication();
+  }
+
+  @override
+  void dispose() {
+    _tts.stop();
+    super.dispose();
+  }
+
+  Future<void> _speakReminder() async {
+    if (medication == null) return;
+    final text =
+        'It is time to take your ${medication!.name}. You need to take ${medication!.dosage}.';
+    setState(() => _isSpeaking = true);
+    await _tts.speak(text);
+  }
+
+  Future<void> _stopSpeaking() async {
+    await _tts.stop();
+    if (mounted) setState(() => _isSpeaking = false);
+  }
+
+  String _formatRepeatSchedule(Medication med) {
+    switch (med.repeatType) {
+      case 'daily':
+        return 'Every day';
+      case 'specific_days':
+        if (med.repeatDays.isEmpty) return 'No days set';
+        if (med.repeatDays.length == 7) return 'Every day';
+        return med.repeatDays.join(', ');
+      case 'every_x_days':
+        return 'Every ${med.repeatInterval} days';
+      case 'weekly':
+        final day =
+            med.repeatDays.isNotEmpty ? med.repeatDays.first : 'Unknown';
+        return 'Every week on $day';
+      case 'biweekly':
+        final day =
+            med.repeatDays.isNotEmpty ? med.repeatDays.first : 'Unknown';
+        return 'Every 2 weeks on $day';
+      case 'monthly':
+        return 'Once a month';
+      default:
+        if (med.repeatDays.length == 7 || med.repeatDays.isEmpty) {
+          return 'Every day';
+        }
+        return med.repeatDays.join(', ');
+    }
   }
 
   Future<void> loadMedication() async {
@@ -288,9 +337,9 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
             ),
             infoCard(
               icon: Icons.repeat,
-              title: 'Repeat Days',
+              title: 'Frequency',
               child: Text(
-                formatRepeatDays(medication!.repeatDays),
+                _formatRepeatSchedule(medication!),
                 style: const TextStyle(fontSize: 16),
               ),
             ),
@@ -342,6 +391,27 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _isSpeaking ? _stopSpeaking : _speakReminder,
+                icon: Icon(
+                  _isSpeaking ? Icons.stop_rounded : Icons.volume_up_outlined,
+                ),
+                label: Text(
+                  _isSpeaking ? 'Stop Speaking' : 'Speak Reminder',
+                ),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(52),
+                  foregroundColor: const Color(0xFF4F8CFF),
+                  side: const BorderSide(color: Color(0xFF4F8CFF)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
             ),
             const SizedBox(height: 18),
             Container(

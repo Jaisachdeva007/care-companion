@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/alert_item.dart';
 import '../models/app_user.dart';
@@ -271,14 +272,26 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _showCheckOnMeDialog(String seniorUid) async {
+  Future<void> _showCheckOnMeDialog(
+    String seniorUid,
+    List<String> caregiverNames,
+  ) async {
+    final nameDisplay = caregiverNames.isEmpty
+        ? 'your caregiver'
+        : caregiverNames.length == 1
+            ? caregiverNames.first
+            : caregiverNames.join(' and ');
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Alert caregiver?'),
-          content: const Text(
-            'This will send a "Check on Me" alert to your linked caregiver(s).',
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text('Send alert?'),
+          content: Text(
+            '$nameDisplay will be notified immediately to check on you.',
           ),
           actions: [
             TextButton(
@@ -286,6 +299,13 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const Text('Cancel'),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFDC2626),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               onPressed: () => Navigator.pop(dialogContext, true),
               child: const Text('Send Alert'),
             ),
@@ -301,14 +321,15 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
-      final result = await _firestoreService.createCheckOnMeAlert(
-        seniorUid: seniorUid,
-      );
+      await _firestoreService.createCheckOnMeAlert(seniorUid: seniorUid);
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result)),
+        SnackBar(
+          content: Text('Alert sent to $nameDisplay.'),
+          backgroundColor: const Color(0xFF16A34A),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
@@ -451,8 +472,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
                     ListTile(
-                      leading: const Icon(Icons.edit),
-                      title: const Text('Update My Info'),
+                      leading: const Icon(Icons.person_outline),
+                      title: const Text('Profile'),
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.push(
@@ -704,12 +725,14 @@ class _HomeScreenState extends State<HomeScreen> {
     final bloodGroup = (userData['bloodGroup'] ?? 'Not added').toString();
 
     String emergencyContact = 'Not added';
+    String emergencyPhone = '';
     final contacts = userData['emergencyContacts'];
 
     if (contacts is List && contacts.isNotEmpty) {
       final first = contacts.first;
       final name = (first['name'] ?? '').toString();
       final phone = (first['phone'] ?? '').toString();
+      emergencyPhone = phone;
 
       if (name.isNotEmpty || phone.isNotEmpty) {
         emergencyContact = phone.isEmpty ? name : '$name  •  $phone';
@@ -825,6 +848,9 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icons.call_outlined,
             title: 'Emergency Contact',
             value: emergencyContact,
+            onTap: emergencyPhone.isNotEmpty
+                ? () => launchUrl(Uri(scheme: 'tel', path: emergencyPhone))
+                : null,
           ),
           const SizedBox(height: 10),
           _buildSoftInfoTile(
@@ -875,8 +901,9 @@ class _HomeScreenState extends State<HomeScreen> {
     required IconData icon,
     required String title,
     required String value,
+    VoidCallback? onTap,
   }) {
-    return Container(
+    final tile = Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -926,9 +953,20 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
+          if (onTap != null)
+            const Icon(
+              Icons.phone_forwarded_outlined,
+              size: 18,
+              color: Color(0xFF4F8CFF),
+            ),
         ],
       ),
     );
+
+    if (onTap != null) {
+      return GestureDetector(onTap: onTap, child: tile);
+    }
+    return tile;
   }
 
   Widget _buildSeniorCaregiverCard({
@@ -1075,86 +1113,185 @@ class _HomeScreenState extends State<HomeScreen> {
   }) {
     final linkedCaregiverUids = _extractLinkedCaregiverUids(userData);
     final hasCaregiver = linkedCaregiverUids.isNotEmpty;
+    final caregiverNames =
+        List<String>.from(userData['linkedCaregiverNames'] ?? []);
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0F000000),
-            blurRadius: 18,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(
-                Icons.notifications_active_outlined,
-                size: 26,
-                color: Color(0xFFB91C1C),
+    final nameDisplay = caregiverNames.isEmpty
+        ? 'your caregiver'
+        : caregiverNames.length == 1
+            ? caregiverNames.first
+            : caregiverNames.join(' & ');
+
+    return StreamBuilder<AlertItem?>(
+      stream: _firestoreService.getActiveAlertForSenior(uid),
+      builder: (context, snapshot) {
+        final activeAlert = snapshot.data;
+        final hasActiveAlert = activeAlert != null;
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0F000000),
+                blurRadius: 18,
+                offset: Offset(0, 8),
               ),
-              SizedBox(width: 10),
-              Text(
-                'Check on Me',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF111827),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(
+                    Icons.notifications_active_outlined,
+                    size: 26,
+                    color: Color(0xFFB91C1C),
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    'Check on Me',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (!hasCaregiver)
+                const Text(
+                  'Link a caregiver first to use this feature.',
+                  style: TextStyle(
+                    fontSize: 15,
+                    height: 1.4,
+                    color: Color(0xFF6B7280),
+                  ),
+                )
+              else ...[
+                RichText(
+                  text: TextSpan(
+                    style: const TextStyle(
+                      fontSize: 15,
+                      height: 1.4,
+                      color: Color(0xFF6B7280),
+                    ),
+                    children: [
+                      const TextSpan(
+                          text: 'Your caregiver: '),
+                      TextSpan(
+                        text: nameDisplay,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                      const TextSpan(
+                          text: '. Press the button below if you need someone to check on you.'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                if (hasActiveAlert) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0FDF4),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFBBF7D0)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.check_circle_outline,
+                          color: Color(0xFF16A34A),
+                          size: 22,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Alert sent — your caregiver has been notified.',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF15803D),
+                                ),
+                              ),
+                              if (activeAlert.createdAt != null)
+                                Text(
+                                  'Sent ${_formatAlertTime(activeAlert.createdAt)}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF16A34A),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ],
+              const SizedBox(height: 4),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: (!hasCaregiver || _isSendingAlert || hasActiveAlert)
+                      ? null
+                      : () => _showCheckOnMeDialog(uid, caregiverNames),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFDC2626),
+                    disabledBackgroundColor: hasActiveAlert
+                        ? const Color(0xFF16A34A)
+                        : null,
+                    disabledForegroundColor: hasActiveAlert
+                        ? Colors.white
+                        : null,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  icon: _isSendingAlert
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Icon(hasActiveAlert
+                          ? Icons.check_rounded
+                          : Icons.campaign_outlined),
+                  label: Text(
+                    _isSendingAlert
+                        ? 'Sending...'
+                        : hasActiveAlert
+                            ? 'Alert Sent'
+                            : 'Alert $nameDisplay',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            _buildCheckOnMeSubtitle(userData),
-            style: const TextStyle(
-              fontSize: 15,
-              height: 1.4,
-              color: Color(0xFF6B7280),
-            ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: (!hasCaregiver || _isSendingAlert)
-                  ? null
-                  : () => _showCheckOnMeDialog(uid),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 255, 0, 0),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              icon: _isSendingAlert
-                  ? const SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(Icons.campaign_outlined),
-              label: Text(
-                _isSendingAlert ? 'Sending Alert...' : 'Alert Caregiver',
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

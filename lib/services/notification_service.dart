@@ -9,6 +9,8 @@ class NotificationService {
 
   NotificationService._internal();
 
+  static Function(String ttsText)? onNotificationTapped;
+
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
@@ -29,7 +31,13 @@ class NotificationService {
     );
 
     await flutterLocalNotificationsPlugin.initialize(
-      settings: initializationSettings,
+      initializationSettings,
+      onDidReceiveNotificationResponse: (response) {
+        final payload = response.payload;
+        if (payload != null && payload.isNotEmpty) {
+          onNotificationTapped?.call(payload);
+        }
+      },
     );
 
     await requestPermissions();
@@ -50,14 +58,15 @@ class NotificationService {
     required int id,
     required String title,
     required String body,
+    required String ttsText,
     required DateTime dateTime,
   }) async {
     await flutterLocalNotificationsPlugin.zonedSchedule(
-      id: id,
-      title: title,
-      body: body,
-      scheduledDate: tz.TZDateTime.from(dateTime, tz.local),
-      notificationDetails: const NotificationDetails(
+      id,
+      title,
+      body,
+      tz.TZDateTime.from(dateTime, tz.local),
+      const NotificationDetails(
         android: AndroidNotificationDetails(
           'medication_channel',
           'Medication Reminders',
@@ -72,6 +81,7 @@ class NotificationService {
         ),
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      payload: ttsText,
     );
   }
 
@@ -112,11 +122,14 @@ class NotificationService {
       if (nextTime == null) continue;
 
       final id = DateTime.now().millisecondsSinceEpoch ~/ 1000 + i;
+      final ttsText =
+          'It is time to take your $medicationName. You need to take $dosage.';
 
       await scheduleMedicationReminder(
         id: id,
-        title: 'Medication Reminder',
-        body: 'Time to take $medicationName ($dosage)',
+        title: 'Medication Reminder 💊',
+        body: 'Time to take $medicationName — $dosage',
+        ttsText: ttsText,
         dateTime: nextTime,
       );
     }
@@ -131,17 +144,20 @@ class NotificationService {
     if (!reminderDate.isAfter(DateTime.now())) return;
 
     final id = refillDate.millisecondsSinceEpoch ~/ 1000;
+    final ttsText =
+        'Reminder: your $medicationName may need a refill soon. Please check your supply.';
 
     await scheduleMedicationReminder(
       id: id,
       title: 'Refill Reminder',
-      body: 'Your medication "$medicationName" may need a refill soon.',
+      body: '$medicationName may need a refill soon.',
+      ttsText: ttsText,
       dateTime: reminderDate,
     );
   }
 
   Future<void> cancelNotification(int id) async {
-    await flutterLocalNotificationsPlugin.cancel(id: id);
+    await flutterLocalNotificationsPlugin.cancel(id);
   }
 
   Future<void> cancelAllNotifications() async {

@@ -308,6 +308,23 @@ class FirestoreService {
     return 'Caregiver alerted successfully.';
   }
 
+  Stream<AlertItem?> getActiveAlertForSenior(String seniorUid) {
+    return _db
+        .collection('alerts')
+        .where('seniorUid', isEqualTo: seniorUid)
+        .where('status', isEqualTo: 'active')
+        .orderBy('createdAt', descending: true)
+        .limit(1)
+        .snapshots()
+        .map((snapshot) {
+      if (snapshot.docs.isEmpty) return null;
+      return AlertItem.fromMap(
+        snapshot.docs.first.id,
+        snapshot.docs.first.data(),
+      );
+    });
+  }
+
   Stream<List<AlertItem>> getActiveAlertsForCaregiver(String caregiverUid) {
     return _db
         .collection('alerts')

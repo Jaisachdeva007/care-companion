@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../services/firestore_service.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
+import 'home_screen.dart';
 
 class EditHealthInfoScreen extends StatefulWidget {
   const EditHealthInfoScreen({super.key});
@@ -16,12 +17,13 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
 
   final preferredNameController = TextEditingController();
   final ageController = TextEditingController();
-  final bloodGroupController = TextEditingController();
   final importantInfoController = TextEditingController();
   final conditionsController = TextEditingController();
   final allergiesController = TextEditingController();
-  final medicationsController = TextEditingController();
   final mobilityNeedsController = TextEditingController();
+
+  String? _selectedBloodGroup;
+  static const _bloodGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 
   String inputPreference = 'manual';
   bool voiceAssistantEnabled = false;
@@ -45,17 +47,17 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
 
         preferredNameController.text = data['preferredName'] ?? '';
         ageController.text = data['age'] ?? '';
-        bloodGroupController.text = data['bloodGroup'] ?? '';
         importantInfoController.text = data['importantInfo'] ?? '';
+
+        final savedBloodGroup = (data['bloodGroup'] ?? '').toString();
+        _selectedBloodGroup = _bloodGroups.contains(savedBloodGroup) ? savedBloodGroup : null;
 
         final healthConditions =
             List<String>.from(data['healthConditions'] ?? []);
         final allergies = List<String>.from(data['allergies'] ?? []);
-        final medications = List<String>.from(data['medications'] ?? []);
 
         conditionsController.text = healthConditions.join(', ');
         allergiesController.text = allergies.join(', ');
-        medicationsController.text = medications.join(', ');
         mobilityNeedsController.text = data['mobilityNeeds'] ?? '';
 
         inputPreference = data['inputPreference'] ?? 'manual';
@@ -88,7 +90,7 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
         'preferredName': preferredNameController.text.trim(),
         'age': ageController.text.trim(),
-        'bloodGroup': bloodGroupController.text.trim(),
+        'bloodGroup': _selectedBloodGroup ?? '',
         'importantInfo': importantInfoController.text.trim(),
         'healthConditions': conditionsController.text
             .split(',')
@@ -96,11 +98,6 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
             .where((e) => e.isNotEmpty)
             .toList(),
         'allergies': allergiesController.text
-            .split(',')
-            .map((e) => e.trim())
-            .where((e) => e.isNotEmpty)
-            .toList(),
-        'medications': medicationsController.text
             .split(',')
             .map((e) => e.trim())
             .where((e) => e.isNotEmpty)
@@ -118,7 +115,10 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
         const SnackBar(content: Text('Health info updated successfully')),
       );
 
-      Navigator.pop(context);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -216,11 +216,9 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
   void dispose() {
     preferredNameController.dispose();
     ageController.dispose();
-    bloodGroupController.dispose();
     importantInfoController.dispose();
     conditionsController.dispose();
     allergiesController.dispose();
-    medicationsController.dispose();
     mobilityNeedsController.dispose();
     super.dispose();
   }
@@ -323,10 +321,24 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
                             requiredField: true,
                             keyboardType: TextInputType.number,
                           ),
-                          buildField(
-                            bloodGroupController,
-                            'Blood Group',
-                            hintText: 'e.g. O+, A-, B+, AB+',
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 14),
+                            child: DropdownButtonFormField<String>(
+                              value: _selectedBloodGroup,
+                              decoration: _inputDecoration('Blood Group'),
+                              hint: const Text('Select blood group'),
+                              items: _bloodGroups
+                                  .map((bg) => DropdownMenuItem(
+                                        value: bg,
+                                        child: Text(bg),
+                                      ))
+                                  .toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedBloodGroup = value;
+                                });
+                              },
+                            ),
                           ),
                           buildSectionTitle('Important Medical Details'),
                           buildField(
@@ -344,11 +356,6 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
                           buildField(
                             allergiesController,
                             'Allergies',
-                            hintText: 'Comma separated',
-                          ),
-                          buildField(
-                            medicationsController,
-                            'Medications',
                             hintText: 'Comma separated',
                           ),
                           buildField(
