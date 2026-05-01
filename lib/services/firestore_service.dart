@@ -315,15 +315,19 @@ class FirestoreService {
         .collection('alerts')
         .where('seniorUid', isEqualTo: seniorUid)
         .where('status', isEqualTo: 'active')
-        .orderBy('createdAt', descending: true)
-        .limit(1)
         .snapshots()
         .map((snapshot) {
       if (snapshot.docs.isEmpty) return null;
-      return AlertItem.fromMap(
-        snapshot.docs.first.id,
-        snapshot.docs.first.data(),
-      );
+      final alerts = snapshot.docs
+          .map((doc) => AlertItem.fromMap(doc.id, doc.data()))
+          .toList()
+        ..sort((a, b) {
+          if (a.createdAt == null && b.createdAt == null) return 0;
+          if (a.createdAt == null) return 1;
+          if (b.createdAt == null) return -1;
+          return b.createdAt!.compareTo(a.createdAt!);
+        });
+      return alerts.first;
     });
   }
 
@@ -332,12 +336,20 @@ class FirestoreService {
         .collection('alerts')
         .where('caregiverUids', arrayContains: caregiverUid)
         .where('status', isEqualTo: 'active')
-        .orderBy('createdAt', descending: true)
         .snapshots()
         .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => AlertItem.fromMap(doc.id, doc.data()))
-              .toList(),
+          (snapshot) {
+            final alerts = snapshot.docs
+                .map((doc) => AlertItem.fromMap(doc.id, doc.data()))
+                .toList()
+              ..sort((a, b) {
+                if (a.createdAt == null && b.createdAt == null) return 0;
+                if (a.createdAt == null) return 1;
+                if (b.createdAt == null) return -1;
+                return b.createdAt!.compareTo(a.createdAt!);
+              });
+            return alerts;
+          },
         );
   }
 
