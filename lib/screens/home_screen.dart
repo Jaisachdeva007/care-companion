@@ -1440,6 +1440,22 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
 
+        if (snapshot.hasError) {
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: Text(
+              'Could not load alerts: ${snapshot.error}',
+              style: const TextStyle(color: Color(0xFFDC2626)),
+            ),
+          );
+        }
+
         final alerts = snapshot.data ?? [];
 
         return Container(
