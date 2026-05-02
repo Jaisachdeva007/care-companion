@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -15,15 +16,13 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   Future<void> init() async {
+    if (kIsWeb) return;
+
     tz.initializeTimeZones();
 
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: false,
-      requestBadgePermission: false,
-      requestSoundPermission: false,
-    );
+    const iosSettings = DarwinInitializationSettings();
 
     const initializationSettings = InitializationSettings(
       android: androidSettings,
@@ -31,27 +30,14 @@ class NotificationService {
     );
 
     await flutterLocalNotificationsPlugin.initialize(
-      initializationSettings,
-      onDidReceiveNotificationResponse: (response) {
+      settings: initializationSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
         final payload = response.payload;
         if (payload != null && payload.isNotEmpty) {
           onNotificationTapped?.call(payload);
         }
       },
     );
-
-    await requestPermissions();
-  }
-
-  Future<void> requestPermissions() async {
-    await flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>()
-        ?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
   }
 
   Future<void> scheduleMedicationReminder({
@@ -61,12 +47,14 @@ class NotificationService {
     required String ttsText,
     required DateTime dateTime,
   }) async {
+    if (kIsWeb) return;
+
     await flutterLocalNotificationsPlugin.zonedSchedule(
-      id,
-      title,
-      body,
-      tz.TZDateTime.from(dateTime, tz.local),
-      const NotificationDetails(
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: tz.TZDateTime.from(dateTime, tz.local),
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           'medication_channel',
           'Medication Reminders',
@@ -74,11 +62,7 @@ class NotificationService {
           importance: Importance.max,
           priority: Priority.high,
         ),
-        iOS: DarwinNotificationDetails(
-          presentBanner: true,
-          presentList: true,
-          presentSound: true,
-        ),
+        iOS: DarwinNotificationDetails(),
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       payload: ttsText,
@@ -94,6 +78,7 @@ class NotificationService {
       final minute = int.parse(parts[1]);
 
       final now = DateTime.now();
+
       DateTime scheduled = DateTime(
         now.year,
         now.month,
@@ -117,11 +102,14 @@ class NotificationService {
     required String dosage,
     required List<String> scheduleTimes,
   }) async {
+    if (kIsWeb) return;
+
     for (int i = 0; i < scheduleTimes.length; i++) {
       final nextTime = nextDateTimeFrom24Hour(scheduleTimes[i]);
       if (nextTime == null) continue;
 
       final id = DateTime.now().millisecondsSinceEpoch ~/ 1000 + i;
+
       final ttsText =
           'It is time to take your $medicationName. You need to take $dosage.';
 
@@ -139,11 +127,14 @@ class NotificationService {
     required String medicationName,
     required DateTime refillDate,
   }) async {
+    if (kIsWeb) return;
+
     final reminderDate = refillDate.subtract(const Duration(days: 3));
 
     if (!reminderDate.isAfter(DateTime.now())) return;
 
     final id = refillDate.millisecondsSinceEpoch ~/ 1000;
+
     final ttsText =
         'Reminder: your $medicationName may need a refill soon. Please check your supply.';
 
@@ -157,10 +148,12 @@ class NotificationService {
   }
 
   Future<void> cancelNotification(int id) async {
-    await flutterLocalNotificationsPlugin.cancel(id);
+    if (kIsWeb) return;
+    await flutterLocalNotificationsPlugin.cancel(id: id);
   }
 
   Future<void> cancelAllNotifications() async {
+    if (kIsWeb) return;
     await flutterLocalNotificationsPlugin.cancelAll();
   }
 }
