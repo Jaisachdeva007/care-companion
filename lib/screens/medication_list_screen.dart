@@ -4,10 +4,18 @@ import 'package:flutter/material.dart';
 import '../services/firestore_service.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import 'add_edit_medication_screen.dart';
+import 'add_prescription_screen.dart';
 import 'medication_detail_screen.dart';
 
-class MedicationListScreen extends StatelessWidget {
+class MedicationListScreen extends StatefulWidget {
   const MedicationListScreen({super.key});
+
+  @override
+  State<MedicationListScreen> createState() => _MedicationListScreenState();
+}
+
+class _MedicationListScreenState extends State<MedicationListScreen> {
+  bool _fabExpanded = false;
 
   String formatRepeatDays(List<String> days) {
     if (days.isEmpty) return 'No repeat days';
@@ -310,6 +318,97 @@ class MedicationListScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildExpandableFab(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        if (_fabExpanded) ...[
+          _fabOption(
+            context,
+            icon: Icons.document_scanner_outlined,
+            label: 'Add Prescription',
+            onTap: () {
+              setState(() => _fabExpanded = false);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AddPrescriptionScreen(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 10),
+          _fabOption(
+            context,
+            icon: Icons.medication_outlined,
+            label: 'Add Medication',
+            onTap: () {
+              setState(() => _fabExpanded = false);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AddEditMedicationScreen(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 14),
+        ],
+        FloatingActionButton(
+          backgroundColor: const Color(0xFF4F8CFF),
+          foregroundColor: Colors.white,
+          onPressed: () => setState(() => _fabExpanded = !_fabExpanded),
+          child: AnimatedRotation(
+            turns: _fabExpanded ? 0.125 : 0,
+            duration: const Duration(milliseconds: 200),
+            child: const Icon(Icons.add),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _fabOption(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1A000000),
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 20, color: const Color(0xFF4F8CFF)),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                color: Color(0xFF111827),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser!.uid;
@@ -545,20 +644,7 @@ class MedicationListScreen extends StatelessWidget {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: const Color(0xFF4F8CFF),
-        foregroundColor: Colors.white,
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const AddEditMedicationScreen(),
-            ),
-          );
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Add Medication'),
-      ),
+      floatingActionButton: _buildExpandableFab(context),
       bottomNavigationBar: const CustomBottomNavBar(
         currentTab: AppTab.health,
       ),

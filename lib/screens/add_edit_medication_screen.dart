@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/medication.dart';
+import '../services/ai_service.dart';
 import '../services/firestore_service.dart';
 import '../services/notification_service.dart';
 
@@ -27,7 +30,9 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
   List<String> _selectedDays = ['Mon'];
   bool isActive = true;
   bool isSaving = false;
+  bool _isScanning = false;
   DateTime? _refillDate;
+  String _photoBase64 = '';
 
   static const _allDays = [
     'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
@@ -54,6 +59,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
       _refillDate = med.refillDate;
       _repeatType = med.repeatType.isEmpty ? 'daily' : med.repeatType;
       _repeatInterval = med.repeatInterval > 1 ? med.repeatInterval : 2;
+      _photoBase64 = med.photoBase64;
       _selectedDays = med.repeatDays.isNotEmpty
           ? List.from(med.repeatDays)
           : ['Mon'];
@@ -128,6 +134,56 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
     }
   }
 
+  Future<void> _pickAndScanPhoto() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 60,
+      maxWidth: 800,
+      maxHeight: 800,
+    );
+    if (picked == null) return;
+
+    final bytes = await picked.readAsBytes();
+    final base64 = base64Encode(bytes);
+    setState(() {
+      _photoBase64 = base64;
+      _isScanning = true;
+    });
+
+    try {
+      final result = await AiService().scanMedicationImage(base64);
+      if (!mounted) return;
+
+      if (result == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not read medication details from image.')),
+        );
+        return;
+      }
+
+      setState(() {
+        if (result['name']!.isNotEmpty) nameController.text = result['name']!;
+        if (result['dosage']!.isNotEmpty) dosageController.text = result['dosage']!;
+        if (result['notes']!.isNotEmpty) notesController.text = result['notes']!;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Details filled from image — please review and confirm.'),
+          backgroundColor: Color(0xFF059669),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Scan failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isScanning = false);
+    }
+  }
+
   List<String> _buildRepeatDays() {
     switch (_repeatType) {
       case 'daily':
@@ -170,6 +226,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
         refillDate: _refillDate,
         isActive: isActive,
         logs: widget.medication?.logs ?? [],
+        photoBase64: _photoBase64,
       );
 
       if (widget.medication == null) {
@@ -266,6 +323,86 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
           ),
           const SizedBox(height: 14),
           child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPhotoSection() {
+    return _sectionCard(
+      title: 'Medication Photo',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Take a photo of your medication label and let AI fill in the details automatically.',
+            style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              if (_photoBase64.isNotEmpty)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.memory(
+                    base64Decode(_photoBase64),
+                    width: 80,
+                    height: 80,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              if (_photoBase64.isNotEmpty) const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: _isScanning ? null : _pickAndScanPhoto,
+                      icon: _isScanning
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF4F8CFF),
+                              ),
+                            )
+                          : const Icon(Icons.camera_alt_outlined, size: 18),
+                      label: Text(
+                        _isScanning
+                            ? 'Scanning...'
+                            : _photoBase64.isEmpty
+                                ? 'Upload & Scan with AI'
+                                : 'Rescan with AI',
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF4F8CFF),
+                        side: const BorderSide(color: Color(0xFF4F8CFF)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                      ),
+                    ),
+                    if (_photoBase64.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: () => setState(() => _photoBase64 = ''),
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFF9CA3AF),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: const Text('Remove photo'),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -562,6 +699,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
           key: _formKey,
           child: Column(
             children: [
+              _buildPhotoSection(),
               _sectionCard(
                 title: 'Medication Details',
                 child: Column(

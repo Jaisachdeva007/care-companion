@@ -10,6 +10,7 @@ class Medication {
   final DateTime? refillDate;
   final bool isActive;
   final List<MedicationLog> logs;
+  final String photoBase64;
 
   Medication({
     required this.id,
@@ -23,6 +24,7 @@ class Medication {
     required this.refillDate,
     required this.isActive,
     required this.logs,
+    this.photoBase64 = '',
   });
 
   factory Medication.fromMap(String id, Map<String, dynamic> map) {
@@ -48,6 +50,7 @@ class Medication {
       logs: (map['logs'] as List<dynamic>? ?? [])
           .map((log) => MedicationLog.fromMap(Map<String, dynamic>.from(log)))
           .toList(),
+      photoBase64: map['photoBase64'] ?? '',
     );
   }
 
@@ -63,6 +66,7 @@ class Medication {
       'refillDate': refillDate?.toIso8601String(),
       'isActive': isActive,
       'logs': logs.map((log) => log.toMap()).toList(),
+      if (photoBase64.isNotEmpty) 'photoBase64': photoBase64,
     };
   }
 
@@ -78,6 +82,7 @@ class Medication {
     DateTime? refillDate,
     bool? isActive,
     List<MedicationLog>? logs,
+    String? photoBase64,
   }) {
     return Medication(
       id: id ?? this.id,
@@ -91,6 +96,7 @@ class Medication {
       refillDate: refillDate ?? this.refillDate,
       isActive: isActive ?? this.isActive,
       logs: logs ?? this.logs,
+      photoBase64: photoBase64 ?? this.photoBase64,
     );
   }
 }
