@@ -23,3 +23,6 @@ android/app/build/
 .DS_Store
 .idea/
 .vscode/
+
+# Secrets
+lib/config/app_config.dart
