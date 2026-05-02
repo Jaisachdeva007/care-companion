@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -36,10 +37,13 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isGeneratingCode = false;
   bool _isLinkingCaregiver = false;
   bool _isSendingAlert = false;
+  bool _canResendAlert = true;
+  Timer? _alertCooldownTimer;
 
   @override
   void dispose() {
     _caregiverCodeController.dispose();
+    _alertCooldownTimer?.cancel();
     super.dispose();
   }
 
@@ -333,6 +337,12 @@ class _HomeScreenState extends State<HomeScreen> {
           backgroundColor: const Color(0xFF16A34A),
         ),
       );
+
+      setState(() => _canResendAlert = false);
+      _alertCooldownTimer?.cancel();
+      _alertCooldownTimer = Timer(const Duration(seconds: 30), () {
+        if (mounted) setState(() => _canResendAlert = true);
+      });
     } catch (e) {
       if (!mounted) return;
 
@@ -1250,7 +1260,7 @@ class _HomeScreenState extends State<HomeScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: (!hasCaregiver || _isSendingAlert || hasActiveAlert)
+                  onPressed: (!hasCaregiver || _isSendingAlert || (hasActiveAlert && !_canResendAlert))
                       ? null
                       : () => _showCheckOnMeDialog(uid, caregiverNames),
                   style: ElevatedButton.styleFrom(
