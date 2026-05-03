@@ -174,6 +174,7 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
     TextEditingController controller,
     String label, {
     String? hintText,
+    String? helperText,
     int maxLines = 1,
     TextInputType? keyboardType,
     bool requiredField = false,
@@ -188,9 +189,16 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
           if (requiredField && (value == null || value.trim().isEmpty)) {
             return 'Please enter $label';
           }
+          if (label == 'Age' && value != null && value.trim().isNotEmpty) {
+            final age = int.tryParse(value.trim());
+            if (age == null || age < 1 || age > 120) {
+              return 'Enter a valid age (1–120)';
+            }
+          }
           return null;
         },
-        decoration: _inputDecoration(label, hintText: hintText),
+        decoration: _inputDecoration(label, hintText: hintText)
+            .copyWith(helperText: helperText),
       ),
     );
   }
@@ -223,14 +231,55 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
     super.dispose();
   }
 
+  Widget _buildSwitch({
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: SwitchListTile(
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF111827),
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13),
+        ),
+        value: value,
+        activeColor: const Color(0xFF4F8CFF),
+        onChanged: onChanged,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
       return const Scaffold(
         backgroundColor: Color(0xFFF5F7FB),
         body: Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFF4F8CFF),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(color: Color(0xFF4F8CFF)),
+              SizedBox(height: 14),
+              Text(
+                'Loading health info...',
+                style: TextStyle(color: Color(0xFF6B7280), fontSize: 15),
+              ),
+            ],
           ),
         ),
         bottomNavigationBar: CustomBottomNavBar(
@@ -351,12 +400,14 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
                           buildField(
                             conditionsController,
                             'Health Conditions',
-                            hintText: 'Comma separated',
+                            hintText: 'e.g. Hypertension, Diabetes, Arthritis',
+                            helperText: 'Separate multiple conditions with commas',
                           ),
                           buildField(
                             allergiesController,
                             'Allergies',
-                            hintText: 'Comma separated',
+                            hintText: 'e.g. Penicillin, Peanuts, Latex',
+                            helperText: 'Separate multiple allergies with commas',
                           ),
                           buildField(
                             mobilityNeedsController,
@@ -392,60 +443,20 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
                             },
                           ),
                           const SizedBox(height: 16),
-                          SwitchListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 4,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            tileColor: const Color(0xFFF9FAFB),
-                            title: const Text(
-                              'Enable Voice Assistant',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1F2937),
-                              ),
-                            ),
-                            subtitle: const Text(
-                              'Use voice guidance and spoken assistance.',
-                            ),
+                          _buildSwitch(
+                            title: 'Enable Voice Assistant',
+                            subtitle: 'Spoken guidance and reminders',
                             value: voiceAssistantEnabled,
-                            activeColor: const Color(0xFF4F8CFF),
-                            onChanged: (value) {
-                              setState(() {
-                                voiceAssistantEnabled = value;
-                              });
-                            },
+                            onChanged: (v) =>
+                                setState(() => voiceAssistantEnabled = v),
                           ),
                           const SizedBox(height: 12),
-                          SwitchListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 4,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            tileColor: const Color(0xFFF9FAFB),
-                            title: const Text(
-                              'Enable Large Text',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1F2937),
-                              ),
-                            ),
-                            subtitle: const Text(
-                              'Increase text size for easier reading.',
-                            ),
+                          _buildSwitch(
+                            title: 'Enable Large Text',
+                            subtitle: 'Increase text size for easier reading',
                             value: largeTextEnabled,
-                            activeColor: const Color(0xFF4F8CFF),
-                            onChanged: (value) {
-                              setState(() {
-                                largeTextEnabled = value;
-                              });
-                            },
+                            onChanged: (v) =>
+                                setState(() => largeTextEnabled = v),
                           ),
                           const SizedBox(height: 24),
                           SizedBox(
@@ -462,13 +473,27 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
                                 ),
                               ),
                               child: isSaving
-                                  ? const SizedBox(
-                                      height: 22,
-                                      width: 22,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
+                                  ? const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        SizedBox(
+                                          height: 18,
+                                          width: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        SizedBox(width: 10),
+                                        Text(
+                                          'Saving...',
+                                          style: TextStyle(
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
                                     )
                                   : const Text(
                                       'Save Changes',
