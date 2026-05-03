@@ -31,17 +31,7 @@ import '../widgets/custom_bottom_nav_bar.dart';
 
 class _HomeScreenState extends State<HomeScreen> {
   final FirestoreService _firestoreService = FirestoreService();
-  final TextEditingController _caregiverCodeController = TextEditingController();
-
-  bool _isGeneratingCode = false;
-  bool _isLinkingCaregiver = false;
   bool _isSendingAlert = false;
-
-  @override
-  void dispose() {
-    _caregiverCodeController.dispose();
-    super.dispose();
-  }
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
@@ -77,25 +67,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return result.toList();
-  }
-
-  String _buildCheckOnMeSubtitle(Map<String, dynamic> userData) {
-    final caregiverNames =
-        List<String>.from(userData['linkedCaregiverNames'] ?? []);
-
-    if (caregiverNames.isEmpty) {
-      return 'Link a caregiver first before using this alert feature.';
-    }
-
-    if (caregiverNames.length == 1) {
-      return 'Press the button below to alert ${caregiverNames.first} to check on you.';
-    }
-
-    if (caregiverNames.length == 2) {
-      return 'Press the button below to alert ${caregiverNames[0]} and ${caregiverNames[1]} to check on you.';
-    }
-
-    return 'Press the button below to alert your caregivers to check on you.';
   }
 
   DateTime? _parseMedicationTime(String time) {
@@ -209,69 +180,6 @@ class _HomeScreenState extends State<HomeScreen> {
       'time': nextTime,
       'dosage': nextDosage ?? '',
     };
-  }
-
-  Future<void> _generateCaregiverCode(String uid) async {
-    setState(() {
-      _isGeneratingCode = true;
-    });
-
-    try {
-      final code = await _firestoreService.generateCaregiverCode(uid);
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Caregiver code generated: $code')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to generate code: $e')),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isGeneratingCode = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _linkCaregiver(String caregiverUid) async {
-    setState(() {
-      _isLinkingCaregiver = true;
-    });
-
-    try {
-      final result = await _firestoreService.linkCaregiverToSenior(
-        caregiverUid: caregiverUid,
-        code: _caregiverCodeController.text,
-      );
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result)),
-      );
-
-      if (result.toLowerCase().contains('linked successfully')) {
-        _caregiverCodeController.clear();
-      }
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to link caregiver: $e')),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLinkingCaregiver = false;
-        });
-      }
-    }
   }
 
   Future<void> _showCheckOnMeDialog(
@@ -602,17 +510,6 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         );
       },
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 22,
-        fontWeight: FontWeight.w700,
-        color: Color(0xFF1F2937),
-      ),
     );
   }
 
@@ -971,144 +868,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return tile;
   }
 
-  Widget _buildSeniorCaregiverCard({
-    required Map<String, dynamic> userData,
-    required String uid,
-  }) {
-    final caregiverCode = (userData['caregiverCode'] ?? '').toString();
-    final linkedCaregiverUids = _extractLinkedCaregiverUids(userData);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0F000000),
-            blurRadius: 18,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(
-                Icons.link_outlined,
-                size: 26,
-                color: Color(0xFF111827),
-              ),
-              SizedBox(width: 10),
-              Text(
-                'Caregiver Access',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF111827),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Generate a caregiver code and share it with trusted caregivers so they can link to your account.',
-            style: TextStyle(
-              fontSize: 15,
-              height: 1.4,
-              color: Color(0xFF6B7280),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Your Caregiver Code',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF6B7280),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  caregiverCode.isEmpty ? 'Not generated yet' : caregiverCode,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 2,
-                    color: Color(0xFF111827),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFECFDF5),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFA7F3D0)),
-            ),
-            child: Text(
-              '${linkedCaregiverUids.length} caregiver${linkedCaregiverUids.length == 1 ? '' : 's'} linked',
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF065F46),
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed:
-                  _isGeneratingCode ? null : () => _generateCaregiverCode(uid),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4F8CFF),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: _isGeneratingCode
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : Text(
-                      caregiverCode.isEmpty
-                          ? 'Generate Caregiver Code'
-                          : 'Regenerate Caregiver Code',
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildCheckOnMeCard({
     required String uid,
     required Map<String, dynamic> userData,
@@ -1297,121 +1056,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCaregiverDashboard({
-    required String caregiverUid,
-    required Map<String, dynamic> userData,
-  }) {
-    final linkedSeniorUids = _extractLinkedSeniorUids(userData);
-
-    return Column(
-      children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0F000000),
-                blurRadius: 18,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Row(
-                children: [
-                  Icon(
-                    Icons.people_alt_outlined,
-                    size: 26,
-                    color: Color(0xFF111827),
-                  ),
-                  SizedBox(width: 10),
-                  Text(
-                    'Link a Senior',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF111827),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Enter a caregiver code to link another senior to your caregiver account.',
-                style: TextStyle(
-                  fontSize: 15,
-                  height: 1.4,
-                  color: Color(0xFF6B7280),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _caregiverCodeController,
-                textCapitalization: TextCapitalization.characters,
-                decoration: InputDecoration(
-                  labelText: 'Caregiver Code',
-                  hintText: 'Enter code',
-                  filled: true,
-                  fillColor: const Color(0xFFF9FAFB),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: Color(0xFF4F8CFF)),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLinkingCaregiver
-                      ? null
-                      : () => _linkCaregiver(caregiverUid),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4F8CFF),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: _isLinkingCaregiver
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text(
-                          'Link Senior',
-                          style: TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 18),
-        _buildLinkedSeniorsList(linkedSeniorUids),
-      ],
-    );
-  }
 
   Widget _buildCaregiverAlertsSection(String caregiverUid) {
     return StreamBuilder<List<AlertItem>>(
@@ -1712,27 +1356,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildInlineInfo(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: RichText(
-        text: TextSpan(
-          style: const TextStyle(
-            fontSize: 14,
-            color: Color(0xFF374151),
-          ),
-          children: [
-            TextSpan(
-              text: '$label: ',
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-            TextSpan(text: value),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildMedicationSummaryCard(BuildContext context, String uid) {
   return StreamBuilder(
     stream: _firestoreService.getMedicationsStream(uid),
@@ -1856,25 +1479,6 @@ class _HomeScreenState extends State<HomeScreen> {
           SizedBox(width: 12),
           Text('Loading medication summary...'),
         ],
-      ),
-    );
-  }
-
-  Widget _buildMiniPill({required String label}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF374151),
-        ),
       ),
     );
   }
