@@ -30,7 +30,7 @@ class ScannedMedication {
 
 class AiService {
   static const _baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
-  static const _model = 'google/gemma-3-27b-it:free';
+  static const _model = 'nvidia/nemotron-nano-12b-v2-vl:free';
 
   Future<Map<String, String>?> scanMedicationImage(String base64Image,
       {String mimeType = 'image/jpeg'}) async {
