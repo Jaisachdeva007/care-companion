@@ -20,6 +20,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   String selectedRole = 'Senior';
   bool isLoading = false;
+  bool obscurePassword = true;
 
   @override
   void dispose() {
@@ -57,7 +58,13 @@ class _SignupScreenState extends State<SignupScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Signup failed: $e')),
+        SnackBar(
+          content: Text('Sign up failed: $e'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFFDC2626),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        ),
       );
     } finally {
       if (mounted) {
@@ -68,7 +75,7 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
-  InputDecoration _inputDecoration(String hint) {
+  InputDecoration _inputDecoration(String hint, {Widget? suffixIcon}) {
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(
@@ -80,6 +87,7 @@ class _SignupScreenState extends State<SignupScreen> {
         horizontal: 18,
         vertical: 18,
       ),
+      suffixIcon: suffixIcon,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: const BorderSide(
@@ -209,8 +217,23 @@ class _SignupScreenState extends State<SignupScreen> {
                         const SizedBox(height: 16),
                         TextField(
                           controller: passwordController,
-                          obscureText: true,
-                          decoration: _inputDecoration('Password'),
+                          obscureText: obscurePassword,
+                          decoration: _inputDecoration(
+                            'Password',
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                color: const Color(0xFF6B7280),
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  obscurePassword = !obscurePassword;
+                                });
+                              },
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 24),
                         SizedBox(
@@ -226,13 +249,26 @@ class _SignupScreenState extends State<SignupScreen> {
                               ),
                             ),
                             child: isLoading
-                                ? const SizedBox(
-                                    height: 22,
-                                    width: 22,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
+                                ? const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SizedBox(
+                                        height: 18,
+                                        width: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      SizedBox(width: 10),
+                                      Text(
+                                        'Creating account...',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
                                   )
                                 : const Text(
                                     'Create Account',
