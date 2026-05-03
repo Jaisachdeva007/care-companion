@@ -121,15 +121,36 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
       child: place == null
           ? Row(
               children: [
-                Icon(icon, size: 28, color: const Color(0xFF4F8CFF)),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, size: 22, color: const Color(0xFF9CA3AF)),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    '$title not found nearby',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF1F2937),
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF374151),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'None found in your area',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF9CA3AF),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -139,15 +160,39 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(icon, size: 28, color: const Color(0xFF4F8CFF)),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF4FF),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(icon, size: 22,
+                          color: const Color(0xFF4F8CFF)),
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         title,
                         style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1F2937),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${place.distanceKm.toStringAsFixed(1)} km',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF374151),
                         ),
                       ),
                     ),
@@ -157,27 +202,21 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
                 Text(
                   place.name,
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 17,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF111827),
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
                   place.address,
                   style: const TextStyle(
                     color: Color(0xFF6B7280),
+                    fontSize: 14,
+                    height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  '${place.distanceKm.toStringAsFixed(2)} km away',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF374151),
-                  ),
-                ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
@@ -189,9 +228,11 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
+                      padding: const EdgeInsets.symmetric(vertical: 13),
                     ),
-                    icon: const Icon(Icons.directions),
-                    label: const Text('Directions'),
+                    icon: const Icon(Icons.directions_outlined, size: 18),
+                    label: const Text('Get Directions',
+                        style: TextStyle(fontWeight: FontWeight.w700)),
                   ),
                 ),
               ],
@@ -212,6 +253,10 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
           ),
         ),
         centerTitle: true,
+        backgroundColor: const Color(0xFFF5F7FB),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        iconTheme: const IconThemeData(color: Color(0xFF1F2937)),
       ),
       body: RefreshIndicator(
         onRefresh: _loadNearbyServices,
@@ -235,16 +280,48 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
             ] else if (_error != null) ...[
               const SizedBox(height: 40),
               Center(
-                child: Text(
-                  _error!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 16),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(Icons.location_off_outlined,
+                            size: 48, color: Color(0xFFDC2626)),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        _error!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: Color(0xFF374151),
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton.icon(
+                        onPressed: _loadNearbyServices,
+                        icon: const Icon(Icons.refresh, size: 18),
+                        label: const Text('Try Again',
+                            style: TextStyle(fontWeight: FontWeight.w700)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4F8CFF),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 14),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _loadNearbyServices,
-                child: const Text('Try Again'),
               ),
             ] else ...[
               _buildPlaceCard(
