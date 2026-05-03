@@ -112,7 +112,14 @@ class _AssistantQuestionnaireScreenState
         onError: (error) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Speech error: ${error.errorMsg}')),
+            SnackBar(
+              content: Text('Speech error: ${error.errorMsg}'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: const Color(0xFFDC2626),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            ),
           );
         },
       );
@@ -133,8 +140,14 @@ class _AssistantQuestionnaireScreenState
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Speech recognition is not available on this device.'),
+          SnackBar(
+            content: const Text(
+                'Speech recognition is not available on this device.'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: const Color(0xFFD97706),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           ),
         );
       }
@@ -145,7 +158,14 @@ class _AssistantQuestionnaireScreenState
         _isInitializing = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not start voice assistant: $e')),
+        SnackBar(
+          content: Text('Could not start voice assistant: $e'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFFDC2626),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        ),
       );
     }
   }
@@ -209,7 +229,14 @@ class _AssistantQuestionnaireScreenState
   Future<void> _startListening() async {
     if (!_speechAvailable) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Speech recognition is not available.')),
+        SnackBar(
+          content: const Text('Speech recognition is not available.'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFFD97706),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        ),
       );
       return;
     }
@@ -241,7 +268,14 @@ class _AssistantQuestionnaireScreenState
       debugPrint('Start listening error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not start listening: $e')),
+        SnackBar(
+          content: Text('Could not start listening: $e'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFFDC2626),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        ),
       );
     }
   }
@@ -320,7 +354,14 @@ class _AssistantQuestionnaireScreenState
 
     if (_currentTranscript.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please answer the question first.')),
+        SnackBar(
+          content: const Text('Please answer the question first.'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFFD97706),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        ),
       );
       return;
     }
@@ -411,7 +452,14 @@ class _AssistantQuestionnaireScreenState
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not save answers: $e')),
+        SnackBar(
+          content: Text('Could not save answers: $e'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFFDC2626),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        ),
       );
     }
 
@@ -493,8 +541,16 @@ class _AssistantQuestionnaireScreenState
       ),
       body: _isInitializing
           ? const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF4F8CFF),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: Color(0xFF4F8CFF)),
+                  SizedBox(height: 14),
+                  Text(
+                    'Initializing voice assistant...',
+                    style: TextStyle(color: Color(0xFF6B7280), fontSize: 15),
+                  ),
+                ],
               ),
             )
           : SafeArea(
