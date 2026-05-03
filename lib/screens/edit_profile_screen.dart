@@ -25,6 +25,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final emergencyRelationController = TextEditingController();
 
   bool isLoading = true;
+  bool isSaving = false;
   String selectedRole = 'senior';
   String _photoBase64 = '';
 
@@ -57,7 +58,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not load profile: $e')),
+        SnackBar(
+          content: Text('Could not load profile: $e'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFFDC2626),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        ),
       );
     }
 
@@ -83,6 +90,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Future<void> saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
+    setState(() => isSaving = true);
+
     try {
       final user = FirebaseAuth.instance.currentUser!;
 
@@ -106,15 +115,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully')),
+        SnackBar(
+          content: const Text('Profile updated successfully'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFF059669),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        ),
       );
 
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not update profile: $e')),
+        SnackBar(
+          content: Text('Could not update profile: $e'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFFDC2626),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        ),
       );
+    } finally {
+      if (mounted) setState(() => isSaving = false);
     }
   }
 
@@ -247,8 +270,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       return const Scaffold(
         backgroundColor: Color(0xFFF5F7FB),
         body: Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFF4F8CFF),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(color: Color(0xFF4F8CFF)),
+              SizedBox(height: 14),
+              Text(
+                'Loading profile...',
+                style: TextStyle(color: Color(0xFF6B7280), fontSize: 15),
+              ),
+            ],
           ),
         ),
         bottomNavigationBar: CustomBottomNavBar(
@@ -348,7 +379,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         width: double.infinity,
                         height: 54,
                         child: ElevatedButton(
-                          onPressed: saveProfile,
+                          onPressed: isSaving ? null : saveProfile,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF4F8CFF),
                             foregroundColor: Colors.white,
@@ -357,13 +388,35 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               borderRadius: BorderRadius.circular(18),
                             ),
                           ),
-                          child: const Text(
-                            'Save Changes',
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                          child: isSaving
+                              ? const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      height: 18,
+                                      width: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    SizedBox(width: 10),
+                                    Text(
+                                      'Saving...',
+                                      style: TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : const Text(
+                                  'Save Changes',
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                         ),
                       ),
                     ],
