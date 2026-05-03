@@ -146,7 +146,11 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
 
     final bytes = await picked.readAsBytes();
     final base64 = base64Encode(bytes);
-    final mimeType = picked.name.toLowerCase().endsWith('.png')
+    final mimeType = (bytes.length >= 4 &&
+            bytes[0] == 0x89 &&
+            bytes[1] == 0x50 &&
+            bytes[2] == 0x4E &&
+            bytes[3] == 0x47)
         ? 'image/png'
         : 'image/jpeg';
     setState(() {
