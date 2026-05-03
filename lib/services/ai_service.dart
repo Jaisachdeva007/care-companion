@@ -32,14 +32,16 @@ class AiService {
   static const _baseUrl =
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
-  Future<Map<String, String>?> scanMedicationImage(String base64Image) async {
+  Future<Map<String, String>?> scanMedicationImage(String base64Image,
+      {String mimeType = 'image/jpeg'}) async {
     final prompt = '''You are a medical assistant. Look at this medication
 image and extract the medication details. Return ONLY a valid JSON object
 with these exact fields (no markdown, no explanation):
 {"name": "medication name", "dosage": "dosage amount and form", "notes": "any special instructions or warnings"}
 If you cannot determine a field, use an empty string. Return only the JSON.''';
 
-    final result = await _callGemini(base64Image: base64Image, prompt: prompt);
+    final result = await _callGemini(
+        base64Image: base64Image, prompt: prompt, mimeType: mimeType);
     if (result == null) return null;
 
     try {
@@ -54,15 +56,16 @@ If you cannot determine a field, use an empty string. Return only the JSON.''';
     }
   }
 
-  Future<List<ScannedMedication>?> scanPrescriptionImage(
-      String base64Image) async {
+  Future<List<ScannedMedication>?> scanPrescriptionImage(String base64Image,
+      {String mimeType = 'image/jpeg'}) async {
     final prompt = '''You are a medical assistant. Look at this prescription
 image and extract ALL medications listed. Return ONLY a valid JSON array
 (no markdown, no explanation) where each item has:
 {"name": "medication name", "dosage": "dosage amount", "frequency": "how often e.g. twice daily", "notes": "special instructions", "duration": "e.g. 7 days or ongoing"}
 If you cannot determine a field, use an empty string. Return only the JSON array.''';
 
-    final result = await _callGemini(base64Image: base64Image, prompt: prompt);
+    final result = await _callGemini(
+        base64Image: base64Image, prompt: prompt, mimeType: mimeType);
     if (result == null) return null;
 
     try {
@@ -81,6 +84,7 @@ If you cannot determine a field, use an empty string. Return only the JSON array
   Future<String?> _callGemini({
     required String base64Image,
     required String prompt,
+    String mimeType = 'image/jpeg',
   }) async {
     final key = AppConfig.geminiApiKey;
     if (key == 'YOUR_GEMINI_API_KEY_HERE' || key.isEmpty) {
@@ -96,7 +100,7 @@ If you cannot determine a field, use an empty string. Return only the JSON array
             {'text': prompt},
             {
               'inline_data': {
-                'mime_type': 'image/jpeg',
+                'mime_type': mimeType,
                 'data': base64Image,
               },
             },

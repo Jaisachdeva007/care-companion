@@ -32,6 +32,9 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
 
     final bytes = await picked.readAsBytes();
     final base64 = base64Encode(bytes);
+    final mimeType = picked.name.toLowerCase().endsWith('.png')
+        ? 'image/png'
+        : 'image/jpeg';
 
     setState(() {
       _prescriptionPhotoBase64 = base64;
@@ -40,7 +43,8 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
     });
 
     try {
-      final results = await AiService().scanPrescriptionImage(base64);
+      final results =
+          await AiService().scanPrescriptionImage(base64, mimeType: mimeType);
       if (!mounted) return;
 
       if (results == null || results.isEmpty) {

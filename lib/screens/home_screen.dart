@@ -974,7 +974,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                if (hasActiveAlert) ...[
+                if (hasActiveAlert && !_canResendAlert) ...[
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(14),
@@ -1029,10 +1029,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       : () => _showCheckOnMeDialog(uid, caregiverNames),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFDC2626),
-                    disabledBackgroundColor: hasActiveAlert
+                    disabledBackgroundColor: (hasActiveAlert && !_canResendAlert)
                         ? const Color(0xFF16A34A)
                         : null,
-                    disabledForegroundColor: hasActiveAlert
+                    disabledForegroundColor: (hasActiveAlert && !_canResendAlert)
                         ? Colors.white
                         : null,
                     foregroundColor: Colors.white,
@@ -1051,13 +1051,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : Icon(hasActiveAlert
+                      : Icon((hasActiveAlert && !_canResendAlert)
                           ? Icons.check_rounded
                           : Icons.campaign_outlined),
                   label: Text(
                     _isSendingAlert
                         ? 'Sending...'
-                        : hasActiveAlert
+                        : (hasActiveAlert && !_canResendAlert)
                             ? 'Alert Sent'
                             : 'Alert $nameDisplay',
                     style: const TextStyle(fontWeight: FontWeight.w700),

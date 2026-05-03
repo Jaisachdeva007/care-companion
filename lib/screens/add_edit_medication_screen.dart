@@ -146,13 +146,17 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
 
     final bytes = await picked.readAsBytes();
     final base64 = base64Encode(bytes);
+    final mimeType = picked.name.toLowerCase().endsWith('.png')
+        ? 'image/png'
+        : 'image/jpeg';
     setState(() {
       _photoBase64 = base64;
       _isScanning = true;
     });
 
     try {
-      final result = await AiService().scanMedicationImage(base64);
+      final result =
+          await AiService().scanMedicationImage(base64, mimeType: mimeType);
       if (!mounted) return;
 
       if (result == null) {
