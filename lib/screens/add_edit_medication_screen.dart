@@ -204,7 +204,14 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_scheduleTimes.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add at least one schedule time')),
+        SnackBar(
+          content: const Text('Add at least one schedule time'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFFD97706),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        ),
       );
       return;
     }
@@ -254,7 +261,14 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not save medication: $e')),
+        SnackBar(
+          content: Text('Could not save medication: $e'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFFDC2626),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        ),
       );
     } finally {
       if (mounted) setState(() => isSaving = false);
