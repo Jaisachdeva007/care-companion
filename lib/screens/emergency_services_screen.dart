@@ -25,6 +25,10 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
   NearbyPlace? _clinic;
   NearbyPlace? _er;
 
+  // null = Nearest (no distance cap), otherwise km radius
+  double? _selectedRadiusKm;
+  static const _radiusOptions = [null, 1.0, 2.0, 5.0, 10.0];
+
   @override
   void initState() {
     super.initState();
@@ -65,9 +69,14 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
         ),
       );
 
+      final radiusMeters = _selectedRadiusKm != null
+          ? (_selectedRadiusKm! * 1000).toInt()
+          : 20000;
       final results = await _service.getAllNearbyPlaces(
         position.latitude,
         position.longitude,
+        radiusMeters: radiusMeters,
+        maxDistanceKm: _selectedRadiusKm,
       );
 
       if (!mounted) return;
@@ -100,6 +109,48 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
         const SnackBar(content: Text('Could not open directions')),
       );
     }
+  }
+
+  Widget _buildRadiusSelector() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: _radiusOptions.map((km) {
+          final isSelected = _selectedRadiusKm == km;
+          final label = km == null ? 'Nearest' : '${km % 1 == 0 ? km.toInt() : km} km';
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: GestureDetector(
+              onTap: () {
+                setState(() => _selectedRadiusKm = km);
+                _loadNearbyServices();
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFF4F8CFF) : Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: isSelected
+                        ? const Color(0xFF4F8CFF)
+                        : const Color(0xFFE5E7EB),
+                  ),
+                ),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isSelected ? Colors.white : const Color(0xFF6B7280),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
   }
 
   Widget _buildPlaceCard(String title, IconData icon, NearbyPlace? place) {
@@ -143,9 +194,11 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      const Text(
-                        'None found in your area',
-                        style: TextStyle(
+                      Text(
+                        _selectedRadiusKm != null
+                            ? 'None found within ${_selectedRadiusKm!.toInt()} km'
+                            : 'None found in your area',
+                        style: const TextStyle(
                           fontSize: 13,
                           color: Color(0xFF9CA3AF),
                         ),
@@ -263,6 +316,8 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
           children: [
+            _buildRadiusSelector(),
+            const SizedBox(height: 8),
             if (_isLoading) ...[
               const SizedBox(height: 80),
               const Center(

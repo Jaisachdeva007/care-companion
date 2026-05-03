@@ -11,41 +11,44 @@ class OpenStreetService {
 
   Future<Map<String, NearbyPlace?>> getAllNearbyPlaces(
     double lat,
-    double lng,
-  ) async {
+    double lng, {
+    int radiusMeters = 20000,
+    double? maxDistanceKm,
+  }) async {
+    final r = radiusMeters;
     final query = '''
 [out:json][timeout:15];
 (
-  node["amenity"="hospital"](around:8000,$lat,$lng);
-  way["amenity"="hospital"](around:8000,$lat,$lng);
-  relation["amenity"="hospital"](around:8000,$lat,$lng);
+  node["amenity"="hospital"](around:$r,$lat,$lng);
+  way["amenity"="hospital"](around:$r,$lat,$lng);
+  relation["amenity"="hospital"](around:$r,$lat,$lng);
 
-  node["amenity"="pharmacy"](around:5000,$lat,$lng);
-  way["amenity"="pharmacy"](around:5000,$lat,$lng);
-  relation["amenity"="pharmacy"](around:5000,$lat,$lng);
+  node["amenity"="pharmacy"](around:$r,$lat,$lng);
+  way["amenity"="pharmacy"](around:$r,$lat,$lng);
+  relation["amenity"="pharmacy"](around:$r,$lat,$lng);
 
-  node["healthcare"="clinic"](around:8000,$lat,$lng);
-  way["healthcare"="clinic"](around:8000,$lat,$lng);
-  relation["healthcare"="clinic"](around:8000,$lat,$lng);
-  node["amenity"="clinic"](around:8000,$lat,$lng);
-  way["amenity"="clinic"](around:8000,$lat,$lng);
-  relation["amenity"="clinic"](around:8000,$lat,$lng);
+  node["healthcare"="clinic"](around:$r,$lat,$lng);
+  way["healthcare"="clinic"](around:$r,$lat,$lng);
+  relation["healthcare"="clinic"](around:$r,$lat,$lng);
+  node["amenity"="clinic"](around:$r,$lat,$lng);
+  way["amenity"="clinic"](around:$r,$lat,$lng);
+  relation["amenity"="clinic"](around:$r,$lat,$lng);
 
-  node["emergency"="yes"](around:8000,$lat,$lng);
-  way["emergency"="yes"](around:8000,$lat,$lng);
-  relation["emergency"="yes"](around:8000,$lat,$lng);
+  node["emergency"="yes"](around:$r,$lat,$lng);
+  way["emergency"="yes"](around:$r,$lat,$lng);
+  relation["emergency"="yes"](around:$r,$lat,$lng);
 
-  node["emergency"="department"](around:8000,$lat,$lng);
-  way["emergency"="department"](around:8000,$lat,$lng);
-  relation["emergency"="department"](around:8000,$lat,$lng);
+  node["emergency"="department"](around:$r,$lat,$lng);
+  way["emergency"="department"](around:$r,$lat,$lng);
+  relation["emergency"="department"](around:$r,$lat,$lng);
 
-  node["amenity"="hospital"]["emergency"="yes"](around:8000,$lat,$lng);
-  way["amenity"="hospital"]["emergency"="yes"](around:8000,$lat,$lng);
-  relation["amenity"="hospital"]["emergency"="yes"](around:8000,$lat,$lng);
+  node["amenity"="hospital"]["emergency"="yes"](around:$r,$lat,$lng);
+  way["amenity"="hospital"]["emergency"="yes"](around:$r,$lat,$lng);
+  relation["amenity"="hospital"]["emergency"="yes"](around:$r,$lat,$lng);
 
-  node["amenity"="hospital"]["emergency"="department"](around:8000,$lat,$lng);
-  way["amenity"="hospital"]["emergency"="department"](around:8000,$lat,$lng);
-  relation["amenity"="hospital"]["emergency"="department"](around:8000,$lat,$lng);
+  node["amenity"="hospital"]["emergency"="department"](around:$r,$lat,$lng);
+  way["amenity"="hospital"]["emergency"="department"](around:$r,$lat,$lng);
+  relation["amenity"="hospital"]["emergency"="department"](around:$r,$lat,$lng);
 );
 out center;
 ''';
@@ -105,6 +108,8 @@ out center;
           (tags['amenity'] == 'hospital' &&
               (tags['emergency'] == 'yes' ||
                   tags['emergency'] == 'department'));
+
+      if (maxDistanceKm != null && distance > maxDistanceKm) continue;
 
       if (isHospital) {
         final place = NearbyPlace(
