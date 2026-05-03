@@ -29,18 +29,17 @@ class ScannedMedication {
 }
 
 class AiService {
-  static const _baseUrl =
-      'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent';
+  static const _baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
+  static const _model = 'google/gemini-2.0-flash-exp:free';
 
   Future<Map<String, String>?> scanMedicationImage(String base64Image,
       {String mimeType = 'image/jpeg'}) async {
-    final prompt = '''You are a medical assistant. Look at this medication
-image and extract the medication details. Return ONLY a valid JSON object
-with these exact fields (no markdown, no explanation):
+    final prompt =
+        '''You are a medical assistant. Look at this medication image and extract the medication details. Return ONLY a valid JSON object with these exact fields (no markdown, no explanation):
 {"name": "medication name", "dosage": "dosage amount and form", "notes": "any special instructions or warnings"}
 If you cannot determine a field, use an empty string. Return only the JSON.''';
 
-    final result = await _callGemini(
+    final result = await _callOpenRouter(
         base64Image: base64Image, prompt: prompt, mimeType: mimeType);
     if (result == null) return null;
 
@@ -58,13 +57,12 @@ If you cannot determine a field, use an empty string. Return only the JSON.''';
 
   Future<List<ScannedMedication>?> scanPrescriptionImage(String base64Image,
       {String mimeType = 'image/jpeg'}) async {
-    final prompt = '''You are a medical assistant. Look at this prescription
-image and extract ALL medications listed. Return ONLY a valid JSON array
-(no markdown, no explanation) where each item has:
+    final prompt =
+        '''You are a medical assistant. Look at this prescription image and extract ALL medications listed. Return ONLY a valid JSON array (no markdown, no explanation) where each item has:
 {"name": "medication name", "dosage": "dosage amount", "frequency": "how often e.g. twice daily", "notes": "special instructions", "duration": "e.g. 7 days or ongoing"}
 If you cannot determine a field, use an empty string. Return only the JSON array.''';
 
-    final result = await _callGemini(
+    final result = await _callOpenRouter(
         base64Image: base64Image, prompt: prompt, mimeType: mimeType);
     if (result == null) return null;
 
@@ -81,67 +79,65 @@ If you cannot determine a field, use an empty string. Return only the JSON array
     }
   }
 
-  Future<String?> _callGemini({
+  Future<String?> _callOpenRouter({
     required String base64Image,
     required String prompt,
     String mimeType = 'image/jpeg',
   }) async {
     final key = AppConfig.geminiApiKey;
-    if (key == 'YOUR_GEMINI_API_KEY_HERE' || key.isEmpty) {
-      throw Exception('Gemini API key not configured. Please update lib/config/app_config.dart');
+    if (key == 'YOUR_API_KEY_HERE' || key.isEmpty) {
+      throw Exception('API key not configured. Please update lib/config/app_config.dart');
     }
 
-    final url = Uri.parse('$_baseUrl?key=$key');
-
     final body = jsonEncode({
-      'contents': [
+      'model': _model,
+      'messages': [
         {
-          'parts': [
-            {'text': prompt},
+          'role': 'user',
+          'content': [
+            {'type': 'text', 'text': prompt},
             {
-              'inline_data': {
-                'mime_type': mimeType,
-                'data': base64Image,
+              'type': 'image_url',
+              'image_url': {
+                'url': 'data:$mimeType;base64,$base64Image',
               },
             },
           ],
         },
       ],
-      'generationConfig': {
-        'temperature': 0.1,
-        'maxOutputTokens': 1024,
-      },
+      'max_tokens': 1024,
+      'temperature': 0.1,
     });
 
     final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
+      Uri.parse(_baseUrl),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $key',
+        'HTTP-Referer': 'https://care-companion-43428.web.app',
+        'X-Title': 'Care Companion',
+      },
       body: body,
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Gemini API error ${response.statusCode}: ${response.body}');
+      throw Exception('AI API error ${response.statusCode}: ${response.body}');
     }
 
     final responseJson = jsonDecode(response.body) as Map<String, dynamic>;
-    final candidates = responseJson['candidates'] as List<dynamic>?;
-    if (candidates == null || candidates.isEmpty) return null;
+    final choices = responseJson['choices'] as List<dynamic>?;
+    if (choices == null || choices.isEmpty) return null;
 
-    final content = candidates[0]['content'] as Map<String, dynamic>?;
-    final parts = content?['parts'] as List<dynamic>?;
-    if (parts == null || parts.isEmpty) return null;
+    final message = choices[0]['message'] as Map<String, dynamic>?;
+    final text = (message?['content'] ?? '').toString().trim();
 
-    final text = (parts[0]['text'] ?? '').toString().trim();
-
-    // Strip markdown code blocks if present
     if (text.startsWith('```')) {
       final lines = text.split('\n');
-      final cleaned = lines
+      return lines
           .skip(1)
           .takeWhile((l) => !l.startsWith('```'))
           .join('\n')
           .trim();
-      return cleaned;
     }
 
     return text;
