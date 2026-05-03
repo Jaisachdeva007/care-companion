@@ -1,1 +1,55 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"care-companion-43428","appId":"1:699399530829:android:7bf652bbde28b61ef02f04","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"care-companion-43428","appId":"1:699399530829:ios:02145ac4cc108cc0f02f04","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"macos":{"default":{"projectId":"care-companion-43428","appId":"1:699399530829:ios:a92a37177188754bf02f04","uploadDebugSymbols":false,"fileOutput":"macos/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"care-companion-43428","configurations":{"android":"1:699399530829:android:7bf652bbde28b61ef02f04","ios":"1:699399530829:ios:02145ac4cc108cc0f02f04","macos":"1:699399530829:ios:a92a37177188754bf02f04","web":"1:699399530829:web:70b694858ebc0bb4f02f04","windows":"1:699399530829:web:cfc754313e6f3c03f02f04"}}}}}}
+{
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "care-companion-43428",
+          "appId": "1:699399530829:android:7bf652bbde28b61ef02f04",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "care-companion-43428",
+          "appId": "1:699399530829:ios:02145ac4cc108cc0f02f04",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "macos": {
+        "default": {
+          "projectId": "care-companion-43428",
+          "appId": "1:699399530829:ios:a92a37177188754bf02f04",
+          "uploadDebugSymbols": false,
+          "fileOutput": "macos/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "care-companion-43428",
+          "configurations": {
+            "android": "1:699399530829:android:7bf652bbde28b61ef02f04",
+            "ios": "1:699399530829:ios:02145ac4cc108cc0f02f04",
+            "macos": "1:699399530829:ios:a92a37177188754bf02f04",
+            "web": "1:699399530829:web:70b694858ebc0bb4f02f04",
+            "windows": "1:699399530829:web:cfc754313e6f3c03f02f04"
+          }
+        }
+      }
+    }
+  }
+}
