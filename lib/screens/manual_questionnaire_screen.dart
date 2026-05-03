@@ -70,8 +70,15 @@ class _ManualQuestionnaireScreenState
         (route) => false,
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving questionnaire: $e')),
+        SnackBar(
+          content: Text('Error saving questionnaire: $e'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFFDC2626),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        ),
       );
     }
 
@@ -298,53 +305,69 @@ class _ManualQuestionnaireScreenState
                           ),
                           const SizedBox(height: 16),
 
-                          SwitchListTile(
-                            shape: RoundedRectangleBorder(
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: const Color(0xFFE5E7EB)),
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            tileColor: const Color(0xFFF9FAFB),
-                            title: const Text(
-                              'Enable Voice Assistant',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1F2937),
+                            child: SwitchListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 4),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16)),
+                              title: const Text(
+                                'Enable Voice Assistant',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF111827),
+                                ),
                               ),
+                              subtitle: const Text(
+                                'Use spoken guidance and voice help.',
+                                style: TextStyle(
+                                    color: Color(0xFF6B7280), fontSize: 13),
+                              ),
+                              value: voiceAssistantEnabled,
+                              activeColor: const Color(0xFF4F8CFF),
+                              onChanged: (value) {
+                                setState(() {
+                                  voiceAssistantEnabled = value;
+                                });
+                              },
                             ),
-                            subtitle: const Text(
-                              'Use spoken guidance and voice help.',
-                            ),
-                            value: voiceAssistantEnabled,
-                            activeColor: const Color(0xFF4F8CFF),
-                            onChanged: (value) {
-                              setState(() {
-                                voiceAssistantEnabled = value;
-                              });
-                            },
                           ),
                           const SizedBox(height: 12),
 
-                          SwitchListTile(
-                            shape: RoundedRectangleBorder(
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: const Color(0xFFE5E7EB)),
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            tileColor: const Color(0xFFF9FAFB),
-                            title: const Text(
-                              'Enable Large Text',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1F2937),
+                            child: SwitchListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 4),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16)),
+                              title: const Text(
+                                'Enable Large Text',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF111827),
+                                ),
                               ),
+                              subtitle: const Text(
+                                'Increase readability across the app.',
+                                style: TextStyle(
+                                    color: Color(0xFF6B7280), fontSize: 13),
+                              ),
+                              value: largeTextEnabled,
+                              activeColor: const Color(0xFF4F8CFF),
+                              onChanged: (value) {
+                                setState(() {
+                                  largeTextEnabled = value;
+                                });
+                              },
                             ),
-                            subtitle: const Text(
-                              'Increase readability across the app.',
-                            ),
-                            value: largeTextEnabled,
-                            activeColor: const Color(0xFF4F8CFF),
-                            onChanged: (value) {
-                              setState(() {
-                                largeTextEnabled = value;
-                              });
-                            },
                           ),
 
                           const SizedBox(height: 24),
@@ -363,13 +386,27 @@ class _ManualQuestionnaireScreenState
                                 ),
                               ),
                               child: isLoading
-                                  ? const SizedBox(
-                                      height: 22,
-                                      width: 22,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
+                                  ? const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        SizedBox(
+                                          height: 18,
+                                          width: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        SizedBox(width: 10),
+                                        Text(
+                                          'Saving...',
+                                          style: TextStyle(
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
                                     )
                                   : const Text(
                                       'Save Questionnaire',
