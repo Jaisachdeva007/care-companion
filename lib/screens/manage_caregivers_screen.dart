@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/app_user.dart';
 import '../services/firestore_service.dart';
@@ -27,6 +28,20 @@ class _ManageCaregiversScreenState extends State<ManageCaregiversScreen> {
     return result.toList();
   }
 
+  void _copyCode(BuildContext context, String code) {
+    Clipboard.setData(ClipboardData(text: code));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Code copied to clipboard'),
+        backgroundColor: const Color(0xFF059669),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   Future<void> _generateCaregiverCode(String uid) async {
     setState(() {
       _isGeneratingCode = true;
@@ -37,14 +52,30 @@ class _ManageCaregiversScreenState extends State<ManageCaregiversScreen> {
 
       if (!mounted) return;
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Caregiver code generated: $code')),
+        SnackBar(
+          content: Text('Code generated: $code'),
+          backgroundColor: const Color(0xFF059669),
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to generate code: $e')),
+        SnackBar(
+          content: Text('Failed to generate code: $e'),
+          backgroundColor: const Color(0xFFDC2626),
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        ),
       );
     } finally {
       if (mounted) {
@@ -129,10 +160,18 @@ class _ManageCaregiversScreenState extends State<ManageCaregiversScreen> {
         return Scaffold(
           backgroundColor: const Color(0xFFF5F7FB),
           appBar: AppBar(
-            title: const Text('Manage Caregivers'),
+            title: const Text(
+              'Manage Caregivers',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1F2937),
+              ),
+            ),
+            centerTitle: true,
             backgroundColor: const Color(0xFFF5F7FB),
             elevation: 0,
             scrolledUnderElevation: 0,
+            iconTheme: const IconThemeData(color: Color(0xFF1F2937)),
           ),
           body: SafeArea(
             child: SingleChildScrollView(
@@ -176,23 +215,72 @@ class _ManageCaregiversScreenState extends State<ManageCaregiversScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: Text(
-                            caregiverCode.isEmpty ? 'Not generated yet' : caregiverCode,
-                            style: const TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 2,
-                              color: Color(0xFF111827),
+                        if (caregiverCode.isNotEmpty) ...[
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEFF4FF),
+                              borderRadius: BorderRadius.circular(16),
+                              border:
+                                  Border.all(color: const Color(0xFFD6E6FF)),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  caregiverCode,
+                                  style: const TextStyle(
+                                    fontSize: 30,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 6,
+                                    color: Color(0xFF1E40AF),
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                GestureDetector(
+                                  onTap: () =>
+                                      _copyCode(context, caregiverCode),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                          color: const Color(0xFFD6E6FF)),
+                                    ),
+                                    child: const Icon(Icons.copy_rounded,
+                                        size: 18,
+                                        color: Color(0xFF4F8CFF)),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
+                        ] else ...[
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF9FAFB),
+                              borderRadius: BorderRadius.circular(16),
+                              border:
+                                  Border.all(color: const Color(0xFFE5E7EB)),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                '— — — — — —',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 4,
+                                  color: Color(0xFF9CA3AF),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 14),
                         SizedBox(
                           width: double.infinity,
@@ -286,11 +374,29 @@ class _ManageCaregiversScreenState extends State<ManageCaregiversScreen> {
                             ),
                             const SizedBox(height: 16),
                             if (caregivers.isEmpty)
-                              const Text(
-                                'No caregivers linked yet.',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: Color(0xFF6B7280),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 12),
+                                child: Column(
+                                  children: [
+                                    Icon(Icons.person_add_outlined,
+                                        size: 40, color: Color(0xFF9CA3AF)),
+                                    SizedBox(height: 10),
+                                    Text(
+                                      'No caregivers linked yet',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF374151),
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      'Share your code with a trusted caregiver.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                          fontSize: 13,
+                                          color: Color(0xFF6B7280)),
+                                    ),
+                                  ],
                                 ),
                               )
                             else

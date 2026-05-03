@@ -52,12 +52,21 @@ class _LinkSeniorScreenState extends State<LinkSeniorScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(result)));
-
-      if (result.toLowerCase().contains('success')) {
-        _caregiverCodeController.clear();
-      }
+      final isSuccess = result.toLowerCase().contains('success') ||
+          result.toLowerCase().contains('linked');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result),
+          backgroundColor: isSuccess
+              ? const Color(0xFF059669)
+              : const Color(0xFFDC2626),
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        ),
+      );
+      if (isSuccess) _caregiverCodeController.clear();
     } catch (e) {
       if (!mounted) return;
 
@@ -108,11 +117,34 @@ class _LinkSeniorScreenState extends State<LinkSeniorScreen> {
   }
 
   Widget _info(String label, String value) {
+    if (value.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Text(
-        '$label: ${value.isEmpty ? "Not added" : value}',
-        style: const TextStyle(color: Color(0xFF374151)),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF6B7280),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF111827),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -158,7 +190,30 @@ class _LinkSeniorScreenState extends State<LinkSeniorScreen> {
               ),
               const SizedBox(height: 12),
               if (seniors.isEmpty)
-                const Text('No seniors linked yet.')
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Column(
+                    children: [
+                      Icon(Icons.person_search_outlined,
+                          size: 40, color: Color(0xFF9CA3AF)),
+                      SizedBox(height: 10),
+                      Text(
+                        'No seniors linked yet',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF374151),
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Enter the code from a senior\'s app above.',
+                        textAlign: TextAlign.center,
+                        style:
+                            TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                      ),
+                    ],
+                  ),
+                )
               else
                 ...seniors.map(_buildSeniorCard),
             ],
@@ -248,12 +303,38 @@ class _LinkSeniorScreenState extends State<LinkSeniorScreen> {
                       TextField(
                         controller: _caregiverCodeController,
                         textCapitalization: TextCapitalization.characters,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 3,
+                        ),
+                        textAlign: TextAlign.center,
                         decoration: InputDecoration(
-                          hintText: 'Enter caregiver code',
+                          hintText: 'ABC123',
+                          hintStyle: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: 3,
+                            color: Color(0xFFD1D5DB),
+                          ),
                           filled: true,
                           fillColor: const Color(0xFFF9FAFB),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 18, vertical: 16),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
+                            borderSide:
+                                const BorderSide(color: Color(0xFFE5E7EB)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide:
+                                const BorderSide(color: Color(0xFFE5E7EB)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(
+                                color: Color(0xFF4F8CFF), width: 1.5),
                           ),
                         ),
                       ),
@@ -261,25 +342,31 @@ class _LinkSeniorScreenState extends State<LinkSeniorScreen> {
                       SizedBox(
                         width: double.infinity,
                         height: 52,
-                        child: ElevatedButton(
+                        child: ElevatedButton.icon(
                           onPressed: _isLinking ? null : () => _linkSenior(uid),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4F8CFF),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: _isLinking
+                          icon: _isLinking
                               ? const SizedBox(
-                                  height: 22,
-                                  width: 22,
+                                  height: 18,
+                                  width: 18,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     color: Colors.white,
                                   ),
                                 )
-                              : const Text('Link Senior'),
+                              : const Icon(Icons.link_rounded, size: 18),
+                          label: Text(
+                            _isLinking ? 'Linking...' : 'Link Senior',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 16),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF4F8CFF),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
                         ),
                       ),
                     ],

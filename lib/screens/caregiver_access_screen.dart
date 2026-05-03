@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/app_user.dart';
 import '../services/firestore_service.dart';
@@ -24,6 +25,20 @@ class _CaregiverAccessScreenState extends State<CaregiverAccessScreen> {
     if (single.isNotEmpty) result.add(single);
 
     return result.toList();
+  }
+
+  void _copyCode(BuildContext context, String code) {
+    Clipboard.setData(ClipboardData(text: code));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Code copied to clipboard'),
+        backgroundColor: const Color(0xFF059669),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   Future<void> _generateCaregiverCode(String uid) async {
@@ -168,59 +183,121 @@ class _CaregiverAccessScreenState extends State<CaregiverAccessScreen> {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF9FAFB),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          caregiverCode.isEmpty
-                              ? 'Not generated'
-                              : caregiverCode,
-                          style: const TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 2,
-                          ),
+                      const Text(
+                        'Share this code with your caregiver so they can link to your account.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF6B7280),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
+                      if (caregiverCode.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF4FF),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0xFFD6E6FF)),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                caregiverCode,
+                                style: const TextStyle(
+                                  fontSize: 30,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 6,
+                                  color: Color(0xFF1E40AF),
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              GestureDetector(
+                                onTap: () => _copyCode(context, caregiverCode),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                        color: const Color(0xFFD6E6FF)),
+                                  ),
+                                  child: const Icon(Icons.copy_rounded,
+                                      size: 18, color: Color(0xFF4F8CFF)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ] else ...[
+                        Container(
+                          padding: const EdgeInsets.all(18),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF9FAFB),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0xFFE5E7EB)),
+                          ),
+                          child: const Text(
+                            '— — — — — —',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 4,
+                              color: Color(0xFF9CA3AF),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                       Text(
-                        '${linkedCaregiverUids.length} caregiver(s) linked',
+                        '${linkedCaregiverUids.length} caregiver${linkedCaregiverUids.length == 1 ? '' : 's'} linked',
                         style: const TextStyle(
                           color: Color(0xFF6B7280),
+                          fontSize: 13,
                         ),
                       ),
                       const SizedBox(height: 14),
                       SizedBox(
                         width: double.infinity,
                         height: 52,
-                        child: ElevatedButton(
+                        child: ElevatedButton.icon(
                           onPressed: _isGeneratingCode
                               ? null
                               : () => _generateCaregiverCode(uid),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4F8CFF),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: _isGeneratingCode
+                          icon: _isGeneratingCode
                               ? const SizedBox(
-                                  height: 22,
-                                  width: 22,
+                                  height: 18,
+                                  width: 18,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     color: Colors.white,
                                   ),
                                 )
-                              : Text(
+                              : Icon(
                                   caregiverCode.isEmpty
-                                      ? 'Generate Code'
-                                      : 'Regenerate Code',
+                                      ? Icons.key_outlined
+                                      : Icons.refresh,
+                                  size: 18,
                                 ),
+                          label: Text(
+                            _isGeneratingCode
+                                ? 'Generating...'
+                                : caregiverCode.isEmpty
+                                    ? 'Generate Code'
+                                    : 'Regenerate Code',
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF4F8CFF),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -246,7 +323,32 @@ class _CaregiverAccessScreenState extends State<CaregiverAccessScreen> {
                       ),
                       const SizedBox(height: 12),
                       if (linkedCaregiverUids.isEmpty)
-                        const Text('No caregivers linked yet.')
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Column(
+                            children: [
+                              Icon(Icons.person_add_outlined,
+                                  size: 40, color: Color(0xFF9CA3AF)),
+                              SizedBox(height: 10),
+                              Text(
+                                'No caregivers linked yet',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF374151),
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Generate a code above and share it with your caregiver.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF6B7280),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
                       else
                         FutureBuilder<List<AppUser>>(
                           future: _firestoreService

@@ -433,8 +433,16 @@ class _MedicationListScreenState extends State<MedicationListScreen> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF4F8CFF),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: Color(0xFF4F8CFF)),
+                  SizedBox(height: 14),
+                  Text(
+                    'Loading medications...',
+                    style: TextStyle(color: Color(0xFF6B7280), fontSize: 15),
+                  ),
+                ],
               ),
             );
           }
@@ -442,33 +450,68 @@ class _MedicationListScreenState extends State<MedicationListScreen> {
           final medications = snapshot.data ?? [];
 
           if (medications.isEmpty) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(24, 24, 24, 120),
+                padding: const EdgeInsets.fromLTRB(32, 24, 32, 120),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.medication_outlined,
-                      size: 80,
-                      color: Color(0xFF4F8CFF),
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF4FF),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.medication_outlined,
+                        size: 56,
+                        color: Color(0xFF4F8CFF),
+                      ),
                     ),
-                    SizedBox(height: 16),
-                    Text(
+                    const SizedBox(height: 20),
+                    const Text(
                       'No medications yet',
                       style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
                         color: Color(0xFF111827),
                       ),
                     ),
-                    SizedBox(height: 10),
-                    Text(
-                      'Tap the button below to add your first medication.',
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Add your medications to get daily reminders and track your adherence.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         color: Color(0xFF6B7280),
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AddEditMedicationScreen(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.add, size: 20),
+                      label: const Text(
+                        'Add First Medication',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 15),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4F8CFF),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
                     ),
                   ],

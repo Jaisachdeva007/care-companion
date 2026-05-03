@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/app_user.dart';
 import '../models/medication.dart';
 import '../services/firestore_service.dart';
@@ -83,6 +84,14 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
         .map((d) => (d['taken'] ?? 0) + (d['skipped'] ?? 0))
         .fold(0, (a, b) => a > b ? a : b);
 
+    final totalTaken = adherence.values
+        .fold(0, (sum, d) => sum + (d['taken'] ?? 0));
+    final totalAll = adherence.values
+        .fold(0, (sum, d) => sum + (d['taken'] ?? 0) + (d['skipped'] ?? 0));
+    final adherencePct = totalAll > 0
+        ? ((totalTaken / totalAll) * 100).round()
+        : null;
+
     final displayName = senior.fullName.isEmpty ? 'Senior' : senior.fullName;
     final bloodGroup =
         senior.bloodGroup.isEmpty ? 'Not set' : senior.bloodGroup;
@@ -141,7 +150,7 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            _buildAdherenceChart(adherence, maxVal),
+            _buildAdherenceChart(adherence, maxVal, adherencePct),
             const SizedBox(height: 16),
             _buildMedicationsSection(),
           ],
@@ -209,11 +218,24 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
                 ),
                 if (senior.phone.isNotEmpty) ...[
                   const SizedBox(height: 6),
-                  Text(
-                    senior.phone,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF6B7280),
+                  GestureDetector(
+                    onTap: () => launchUrl(
+                        Uri(scheme: 'tel', path: senior.phone)),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.phone_outlined,
+                            size: 14, color: Color(0xFF4F8CFF)),
+                        const SizedBox(width: 4),
+                        Text(
+                          senior.phone,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF4F8CFF),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -327,7 +349,7 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
   }
 
   Widget _buildAdherenceChart(
-      Map<String, Map<String, int>> adherence, int maxVal) {
+      Map<String, Map<String, int>> adherence, int maxVal, int? adherencePct) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -346,22 +368,42 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.bar_chart_rounded,
+              const Icon(Icons.bar_chart_rounded,
                   size: 20, color: Color(0xFF4F8CFF)),
-              SizedBox(width: 8),
-              Text(
-                '7-Day Medication Adherence',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF111827),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  '7-Day Adherence',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF111827),
+                  ),
                 ),
               ),
+              if (adherencePct != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _adherenceColor(adherencePct)
+                        .withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '$adherencePct%',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                      color: _adherenceColor(adherencePct),
+                    ),
+                  ),
+                ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Row(
             children: [
               _legendDot(const Color(0xFF22C55E), 'Taken'),
@@ -447,6 +489,12 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
     );
   }
 
+  Color _adherenceColor(int pct) {
+    if (pct >= 80) return const Color(0xFF059669);
+    if (pct >= 50) return const Color(0xFFD97706);
+    return const Color(0xFFDC2626);
+  }
+
   Widget _legendDot(Color color, String label) {
     return Row(
       children: [
@@ -500,19 +548,35 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
           ),
           const SizedBox(height: 14),
           if (_loadingMeds)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: CircularProgressIndicator(
-                  color: Color(0xFF4F8CFF),
-                  strokeWidth: 2,
-                ),
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF4F8CFF),
+                      strokeWidth: 2,
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Text(
+                    'Loading medications...',
+                    style: TextStyle(
+                        color: Color(0xFF6B7280), fontSize: 14),
+                  ),
+                ],
               ),
             )
           else if (_medications.isEmpty)
-            const Text(
-              'No medications added.',
-              style: TextStyle(color: Color(0xFF6B7280), fontSize: 15),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                'No medications on record.',
+                style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+              ),
             )
           else
             ..._medications.map(_buildMedTile),
