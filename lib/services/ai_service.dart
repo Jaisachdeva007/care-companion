@@ -30,7 +30,7 @@ class ScannedMedication {
 
 class AiService {
   static const _baseUrl =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
   Future<Map<String, String>?> scanMedicationImage(String base64Image) async {
     final prompt = '''You are a medical assistant. Look at this medication
