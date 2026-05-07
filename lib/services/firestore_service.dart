@@ -283,13 +283,12 @@ class FirestoreService {
     }
 
     final seniorData = seniorDoc.data()!;
-    final caregiverUids = List<String>.from(
-      seniorData['linkedCaregiverUids'] ??
-          ((seniorData['linkedCaregiverUid'] != null &&
-                  seniorData['linkedCaregiverUid'].toString().isNotEmpty)
-              ? [seniorData['linkedCaregiverUid'].toString()]
-              : []),
-    );
+    final caregiverUidsSet = <String>{
+      ...List<String>.from(seniorData['linkedCaregiverUids'] ?? []),
+    };
+    final singleUid = (seniorData['linkedCaregiverUid'] ?? '').toString().trim();
+    if (singleUid.isNotEmpty) caregiverUidsSet.add(singleUid);
+    final caregiverUids = caregiverUidsSet.toList();
 
     if (caregiverUids.isEmpty) {
       return 'No caregiver is linked yet.';
