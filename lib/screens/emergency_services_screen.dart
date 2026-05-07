@@ -21,10 +21,13 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
   String? _error;
   int _requestId = 0;
 
+  // nearest mode
   NearbyPlace? _hospital;
   NearbyPlace? _pharmacy;
   NearbyPlace? _clinic;
   NearbyPlace? _er;
+  // radius mode
+  List<NearbyPlace> _allPlaces = [];
 
   // null = Nearest (no distance cap), otherwise km radius
   double? _selectedRadiusKm;
@@ -72,23 +75,32 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
         ),
       );
 
-      final radiusMeters = _selectedRadiusKm != null
-          ? (_selectedRadiusKm! * 1000).toInt()
-          : 20000;
+      final isNearest = _selectedRadiusKm == null;
+      final radiusMeters = isNearest ? 20000 : (_selectedRadiusKm! * 1000).toInt();
       final results = await _service.getAllNearbyPlaces(
         position.latitude,
         position.longitude,
         radiusMeters: radiusMeters,
         maxDistanceKm: _selectedRadiusKm,
+        nearestOnly: isNearest,
       );
 
       if (!mounted || myRequest != _requestId) return;
 
       setState(() {
-        _hospital = results['hospital'];
-        _pharmacy = results['pharmacy'];
-        _clinic = results['clinic'];
-        _er = results['er'];
+        if (results.isNearest) {
+          _hospital = results.hospital;
+          _pharmacy = results.pharmacy;
+          _clinic = results.clinic;
+          _er = results.er;
+          _allPlaces = [];
+        } else {
+          _allPlaces = results.allPlaces;
+          _hospital = null;
+          _pharmacy = null;
+          _clinic = null;
+          _er = null;
+        }
         _isLoading = false;
       });
     } catch (e) {
@@ -111,6 +123,16 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Could not open directions')),
       );
+    }
+  }
+
+  IconData _iconForCategory(String category) {
+    switch (category) {
+      case 'Hospital': return Icons.local_hospital;
+      case 'Emergency Room': return Icons.emergency;
+      case 'Walk-in Clinic': return Icons.medical_services;
+      case 'Pharmacy': return Icons.local_pharmacy;
+      default: return Icons.place;
     }
   }
 
@@ -381,27 +403,26 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
                   ),
                 ),
               ),
+            ] else if (_selectedRadiusKm == null) ...[
+              _buildPlaceCard('Nearest Hospital', Icons.local_hospital, _hospital),
+              _buildPlaceCard('Nearest ER', Icons.emergency, _er),
+              _buildPlaceCard('Nearest Walk-in Clinic', Icons.medical_services, _clinic),
+              _buildPlaceCard('Nearest Pharmacy', Icons.local_pharmacy, _pharmacy),
+            ] else if (_allPlaces.isEmpty) ...[
+              const SizedBox(height: 40),
+              Center(
+                child: Text(
+                  'No services found within ${_selectedRadiusKm!.toInt()} km.',
+                  style: const TextStyle(fontSize: 15, color: Color(0xFF6B7280)),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ] else ...[
-              _buildPlaceCard(
-                'Nearest Hospital',
-                Icons.local_hospital,
-                _hospital,
-              ),
-              _buildPlaceCard(
-                'Nearest ER',
-                Icons.emergency,
-                _er,
-              ),
-              _buildPlaceCard(
-                'Nearest Walk-in Clinic',
-                Icons.medical_services,
-                _clinic,
-              ),
-              _buildPlaceCard(
-                'Nearest Pharmacy',
-                Icons.local_pharmacy,
-                _pharmacy,
-              ),
+              ..._allPlaces.map((place) => _buildPlaceCard(
+                    place.category,
+                    _iconForCategory(place.category),
+                    place,
+                  )),
             ],
           ],
         ),

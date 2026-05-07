@@ -9,11 +9,14 @@ class OpenStreetService {
   static const String _baseUrl =
       'https://lz4.overpass-api.de/api/interpreter';
 
-  Future<Map<String, NearbyPlace?>> getAllNearbyPlaces(
+  /// Returns nearest-one-per-category when [nearestOnly] is true,
+  /// otherwise returns all places within [maxDistanceKm].
+  Future<NearbyPlaceResult> getAllNearbyPlaces(
     double lat,
     double lng, {
     int radiusMeters = 20000,
     double? maxDistanceKm,
+    bool nearestOnly = false,
   }) async {
     final r = radiusMeters;
     final query = '''
@@ -57,8 +60,7 @@ out center;
         .post(
           Uri.parse(_baseUrl),
           headers: {
-            'Content-Type':
-                'application/x-www-form-urlencoded; charset=UTF-8',
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
           },
           body: {'data': query},
         )
@@ -71,10 +73,12 @@ out center;
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     final elements = (data['elements'] as List<dynamic>? ?? []);
 
-    NearbyPlace? hospital;
-    NearbyPlace? pharmacy;
-    NearbyPlace? clinic;
-    NearbyPlace? er;
+    NearbyPlace? nearestHospital;
+    NearbyPlace? nearestPharmacy;
+    NearbyPlace? nearestClinic;
+    NearbyPlace? nearestEr;
+
+    final allPlaces = <NearbyPlace>[];
 
     for (final element in elements) {
       if (element is! Map<String, dynamic>) continue;
@@ -98,6 +102,8 @@ out center;
 
       final distance = _calculateDistanceKm(lat, lng, placeLat, placeLng);
 
+      if (maxDistanceKm != null && distance > maxDistanceKm) continue;
+
       final isHospital = tags['amenity'] == 'hospital';
       final isPharmacy = tags['amenity'] == 'pharmacy';
       final isClinic =
@@ -109,75 +115,61 @@ out center;
               (tags['emergency'] == 'yes' ||
                   tags['emergency'] == 'department'));
 
-      if (maxDistanceKm != null && distance > maxDistanceKm) continue;
-
-      if (isHospital) {
-        final place = NearbyPlace(
-          name: _fallbackName(tags, 'Nearby Hospital'),
-          address: _buildAddress(tags),
-          lat: placeLat,
-          lng: placeLng,
-          distanceKm: distance,
-          category: 'Hospital',
-        );
-
-        if (hospital == null || distance < hospital.distanceKm) {
-          hospital = place;
-        }
-      }
-
-      if (isPharmacy) {
-        final place = NearbyPlace(
-          name: _fallbackName(tags, 'Nearby Pharmacy'),
-          address: _buildAddress(tags),
-          lat: placeLat,
-          lng: placeLng,
-          distanceKm: distance,
-          category: 'Pharmacy',
-        );
-
-        if (pharmacy == null || distance < pharmacy.distanceKm) {
-          pharmacy = place;
-        }
-      }
-
-      if (isClinic) {
-        final place = NearbyPlace(
-          name: _fallbackName(tags, 'Nearby Walk-in Clinic'),
-          address: _buildAddress(tags),
-          lat: placeLat,
-          lng: placeLng,
-          distanceKm: distance,
-          category: 'Walk-in Clinic',
-        );
-
-        if (clinic == null || distance < clinic.distanceKm) {
-          clinic = place;
-        }
-      }
+      String? category;
+      String fallbackName;
 
       if (isER) {
-        final place = NearbyPlace(
-          name: _fallbackName(tags, 'Nearby Emergency Room'),
-          address: _buildAddress(tags),
-          lat: placeLat,
-          lng: placeLng,
-          distanceKm: distance,
-          category: 'Emergency Room',
-        );
-
-        if (er == null || distance < er.distanceKm) {
-          er = place;
-        }
+        category = 'Emergency Room';
+        fallbackName = 'Nearby Emergency Room';
+      } else if (isHospital) {
+        category = 'Hospital';
+        fallbackName = 'Nearby Hospital';
+      } else if (isClinic) {
+        category = 'Walk-in Clinic';
+        fallbackName = 'Nearby Walk-in Clinic';
+      } else if (isPharmacy) {
+        category = 'Pharmacy';
+        fallbackName = 'Nearby Pharmacy';
+      } else {
+        continue;
       }
+
+      final place = NearbyPlace(
+        name: _fallbackName(tags, fallbackName),
+        address: _buildAddress(tags),
+        lat: placeLat,
+        lng: placeLng,
+        distanceKm: distance,
+        category: category,
+      );
+
+      if (isHospital && (nearestHospital == null || distance < nearestHospital.distanceKm)) {
+        nearestHospital = place;
+      }
+      if (isPharmacy && (nearestPharmacy == null || distance < nearestPharmacy.distanceKm)) {
+        nearestPharmacy = place;
+      }
+      if (isClinic && (nearestClinic == null || distance < nearestClinic.distanceKm)) {
+        nearestClinic = place;
+      }
+      if (isER && (nearestEr == null || distance < nearestEr.distanceKm)) {
+        nearestEr = place;
+      }
+
+      allPlaces.add(place);
     }
 
-    return {
-      'hospital': hospital,
-      'pharmacy': pharmacy,
-      'clinic': clinic,
-      'er': er,
-    };
+    if (nearestOnly) {
+      return NearbyPlaceResult.nearest(
+        hospital: nearestHospital,
+        pharmacy: nearestPharmacy,
+        clinic: nearestClinic,
+        er: nearestEr,
+      );
+    }
+
+    allPlaces.sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
+    return NearbyPlaceResult.all(allPlaces);
   }
 
   String _fallbackName(Map<String, dynamic> tags, String fallback) {
