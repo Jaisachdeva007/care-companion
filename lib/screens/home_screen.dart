@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/alert_item.dart';
 import '../models/app_user.dart';
+import '../models/caregiver_message.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import 'edit_health_info_screen.dart';
@@ -32,13 +34,25 @@ import '../widgets/custom_bottom_nav_bar.dart';
 
 class _HomeScreenState extends State<HomeScreen> {
   final FirestoreService _firestoreService = FirestoreService();
+  final FlutterTts _tts = FlutterTts();
   bool _isSendingAlert = false;
   bool _canResendAlert = true;
   Timer? _alertCooldownTimer;
+  // track message IDs already spoken so stream rebuilds don't re-speak
+  final Set<String> _spokenMessageIds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _tts.setLanguage('en-US');
+    _tts.setSpeechRate(0.45);
+    _tts.setVolume(1.0);
+  }
 
   @override
   void dispose() {
     _alertCooldownTimer?.cancel();
+    _tts.stop();
     super.dispose();
   }
 
@@ -289,6 +303,181 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  static const _presetMessages = [
+    'Please take your medication 💊',
+    'I hope you\'re feeling good today! 😊',
+    'Just checking in on you ❤️',
+    'Please call me when you can 📞',
+    'Don\'t forget to drink water 💧',
+  ];
+
+  void _showSendMessageSheet(BuildContext context, String caregiverUid, AppUser senior) {
+    final controller = TextEditingController();
+    bool isSending = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          Future<void> send(String message) async {
+            if (message.trim().isEmpty) return;
+            setSheetState(() => isSending = true);
+            try {
+              await _firestoreService.sendCaregiverMessage(
+                caregiverUid: caregiverUid,
+                seniorUid: senior.uid,
+                message: message.trim(),
+              );
+              if (ctx.mounted) {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Message sent to ${senior.fullName}.')),
+                );
+              }
+            } catch (e) {
+              setSheetState(() => isSending = false);
+              if (ctx.mounted) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  SnackBar(content: Text('Failed to send: $e')),
+                );
+              }
+            }
+          }
+
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            ),
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFFF5F7FB),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD1D5DB),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Message ${senior.fullName}',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Select a quick message or write your own.',
+                    style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _presetMessages.map((msg) => GestureDetector(
+                      onTap: isSending ? null : () => send(msg),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFF4F8CFF)),
+                        ),
+                        child: Text(
+                          msg,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF4F8CFF),
+                          ),
+                        ),
+                      ),
+                    )).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller,
+                    maxLines: 3,
+                    minLines: 1,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      hintText: 'Type a custom message...',
+                      hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Color(0xFF4F8CFF)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: isSending ? null : () => send(controller.text),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4F8CFF),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      icon: isSending
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.send_rounded, size: 18),
+                      label: Text(
+                        isSending ? 'Sending...' : 'Send Message',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final firebaseUser = FirebaseAuth.instance.currentUser!;
@@ -500,6 +689,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 18),
                       if (role == 'senior') ...[
+                        _buildCaregiverMessageSection(firebaseUser.uid),
+                        const SizedBox(height: 18),
                         _buildCheckOnMeCard(
                           uid: firebaseUser.uid,
                           userData: userData,
@@ -508,7 +699,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         _buildMedicationSummaryCard(context, firebaseUser.uid),
                         const SizedBox(height: 22),
                       ] else ...[
-                          _buildLinkedSeniorsList(_extractLinkedSeniorUids(userData)),
+                          _buildLinkedSeniorsList(_extractLinkedSeniorUids(userData), firebaseUser.uid),
                           const SizedBox(height: 18),
                           _buildCaregiverAlertsSection(firebaseUser.uid),
                           const SizedBox(height: 22),
@@ -1220,7 +1411,110 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildLinkedSeniorsList(List<String> linkedSeniorUids) {
+  Widget _buildCaregiverMessageSection(String seniorUid) {
+    return StreamBuilder<List<CaregiverMessage>>(
+      stream: _firestoreService.getUnreadCaregiverMessages(seniorUid),
+      builder: (context, snapshot) {
+        final messages = snapshot.data ?? [];
+
+        if (messages.isEmpty) return const SizedBox.shrink();
+
+        // speak any new messages
+        for (final msg in messages) {
+          if (!_spokenMessageIds.contains(msg.id)) {
+            _spokenMessageIds.add(msg.id);
+            Future.delayed(const Duration(milliseconds: 300), () {
+              _tts.speak('Message from ${msg.caregiverName}: ${msg.message}');
+            });
+          }
+        }
+
+        return Column(
+          children: messages.map((msg) => _buildMessageCard(msg)).toList(),
+        );
+      },
+    );
+  }
+
+  Widget _buildMessageCard(CaregiverMessage msg) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0FDF4),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFF86EFAC)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0F000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.message_rounded, size: 22, color: Color(0xFF16A34A)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Message from ${msg.caregiverName}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF15803D),
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  _tts.speak('Message from ${msg.caregiverName}: ${msg.message}');
+                },
+                child: const Icon(Icons.volume_up_rounded, size: 20, color: Color(0xFF16A34A)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            msg.message,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF111827),
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Align(
+            alignment: Alignment.centerRight,
+            child: OutlinedButton(
+              onPressed: () async {
+                await _firestoreService.markCaregiverMessageRead(msg.id);
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF16A34A),
+                side: const BorderSide(color: Color(0xFF16A34A)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
+              child: const Text(
+                'Got it ✓',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLinkedSeniorsList(List<String> linkedSeniorUids, String caregiverUid) {
     return FutureBuilder<List<AppUser>>(
       future: _firestoreService.getUsersByUids(linkedSeniorUids),
       builder: (context, snapshot) {
@@ -1295,7 +1589,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 )
               else
-                ...seniors.map((senior) => _buildSeniorListTile(senior)),
+                ...seniors.map((senior) => _buildSeniorListTile(senior, caregiverUid)),
             ],
           ),
         );
@@ -1303,42 +1597,44 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSeniorListTile(AppUser senior) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => SeniorDetailScreen(senior: senior),
-          ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF9FAFB),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
+  Widget _buildSeniorListTile(AppUser senior, String caregiverUid) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => SeniorDetailScreen(senior: senior),
+              ),
+            ),
+            child: CircleAvatar(
               radius: 24,
               backgroundColor: const Color(0xFFEFF4FF),
               backgroundImage: senior.photoBase64.isNotEmpty
                   ? MemoryImage(base64Decode(senior.photoBase64))
                   : null,
               child: senior.photoBase64.isEmpty
-                  ? const Icon(
-                      Icons.person_rounded,
-                      size: 24,
-                      color: Color(0xFF4F8CFF),
-                    )
+                  ? const Icon(Icons.person_rounded, size: 24, color: Color(0xFF4F8CFF))
                   : null,
             ),
-            const SizedBox(width: 12),
-            Expanded(
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => SeniorDetailScreen(senior: senior),
+                ),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1353,20 +1649,40 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 3),
                   Text(
                     senior.phone.isEmpty ? 'No phone' : senior.phone,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF6B7280),
+                    style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () => _showSendMessageSheet(context, caregiverUid, senior),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF4FF),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF4F8CFF).withOpacity(0.4)),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.message_outlined, size: 15, color: Color(0xFF4F8CFF)),
+                  SizedBox(width: 5),
+                  Text(
+                    'Message',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF4F8CFF),
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(
-              Icons.chevron_right,
-              color: Color(0xFF9CA3AF),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

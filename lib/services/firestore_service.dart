@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/alert_item.dart';
 import '../models/app_user.dart';
+import '../models/caregiver_message.dart';
 import '../models/medication.dart';
 
 class FirestoreService {
@@ -356,6 +357,50 @@ class FirestoreService {
     await _db.collection('alerts').doc(alertId).update({
       'status': 'resolved',
       'resolvedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> sendCaregiverMessage({
+    required String caregiverUid,
+    required String seniorUid,
+    required String message,
+  }) async {
+    final caregiverDoc = await _db.collection('users').doc(caregiverUid).get();
+    final caregiverName = caregiverDoc.exists
+        ? (caregiverDoc.data()?['fullName'] ?? 'Your caregiver').toString()
+        : 'Your caregiver';
+
+    await _db.collection('caregiver_messages').add({
+      'caregiverUid': caregiverUid,
+      'caregiverName': caregiverName,
+      'seniorUid': seniorUid,
+      'message': message,
+      'isRead': false,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Stream<List<CaregiverMessage>> getUnreadCaregiverMessages(String seniorUid) {
+    return _db
+        .collection('caregiver_messages')
+        .where('seniorUid', isEqualTo: seniorUid)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => CaregiverMessage.fromMap(doc.id, doc.data()))
+          .where((m) => !m.isRead)
+          .toList()
+        ..sort((a, b) {
+          if (a.createdAt == null) return 1;
+          if (b.createdAt == null) return -1;
+          return b.createdAt!.compareTo(a.createdAt!);
+        });
+    });
+  }
+
+  Future<void> markCaregiverMessageRead(String messageId) async {
+    await _db.collection('caregiver_messages').doc(messageId).update({
+      'isRead': true,
     });
   }
 
