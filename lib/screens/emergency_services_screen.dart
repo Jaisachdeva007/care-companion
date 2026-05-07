@@ -19,6 +19,7 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
 
   bool _isLoading = true;
   String? _error;
+  int _requestId = 0;
 
   NearbyPlace? _hospital;
   NearbyPlace? _pharmacy;
@@ -36,6 +37,8 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
   }
 
   Future<void> _loadNearbyServices() async {
+    final myRequest = ++_requestId;
+
     setState(() {
       _isLoading = true;
       _error = null;
@@ -79,7 +82,7 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
         maxDistanceKm: _selectedRadiusKm,
       );
 
-      if (!mounted) return;
+      if (!mounted || myRequest != _requestId) return;
 
       setState(() {
         _hospital = results['hospital'];
@@ -89,7 +92,7 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || myRequest != _requestId) return;
 
       setState(() {
         _error = e.toString().replaceFirst('Exception: ', '');
@@ -103,7 +106,7 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
       'https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}',
     );
 
-    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+    if (!await launchUrl(url, mode: LaunchMode.platformDefault)) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Could not open directions')),
