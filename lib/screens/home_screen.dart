@@ -601,7 +601,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     if (role == 'senior') ...[
                       ListTile(
                         leading: const Icon(Icons.health_and_safety),
-                        title: const Text('Update Health Info'),
+                        title: const Text('Health Info'),
                         onTap: () {
                           Navigator.pop(context);
                           Navigator.push(
