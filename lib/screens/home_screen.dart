@@ -400,7 +400,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Text(
                           msg,
                           style: const TextStyle(
-                            fontSize: 13,
+                            fontSize: 15,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF4F8CFF),
                           ),
@@ -987,12 +987,12 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: const Color(0xFF4B5563)),
+          Icon(icon, size: 18, color: const Color(0xFF4B5563)),
           const SizedBox(width: 6),
           Text(
             label,
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 15,
               fontWeight: FontWeight.w600,
               color: Color(0xFF374151),
             ),
@@ -1040,7 +1040,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF6B7280),
                   ),
@@ -1049,7 +1049,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   value.isEmpty ? 'Not added' : value,
                   style: const TextStyle(
-                    fontSize: 15,
+                    fontSize: 16,
                     height: 1.35,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF111827),
@@ -1198,7 +1198,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Text(
                                   'Sent ${_formatAlertTime(activeAlert.createdAt)}',
                                   style: const TextStyle(
-                                    fontSize: 13,
+                                    fontSize: 15,
                                     color: Color(0xFF16A34A),
                                   ),
                                 ),
@@ -1394,7 +1394,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Text(
             _formatAlertTime(alert.createdAt),
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 15,
               color: Color(0xFF6B7280),
             ),
           ),
@@ -1649,7 +1649,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 3),
                   Text(
                     senior.phone.isEmpty ? 'No phone' : senior.phone,
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                    style: const TextStyle(fontSize: 15, color: Color(0xFF6B7280)),
                   ),
                 ],
               ),
@@ -1668,12 +1668,12 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.message_outlined, size: 15, color: Color(0xFF4F8CFF)),
-                  SizedBox(width: 5),
+                  Icon(Icons.message_outlined, size: 18, color: Color(0xFF4F8CFF)),
+                  SizedBox(width: 6),
                   Text(
                     'Message',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF4F8CFF),
                     ),
