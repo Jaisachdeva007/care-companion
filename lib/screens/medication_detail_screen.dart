@@ -230,7 +230,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                   style: const TextStyle(
                     color: Color(0xFF6B7280),
                     fontWeight: FontWeight.w600,
-                    fontSize: 12,
+                    fontSize: 14,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -339,10 +339,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
         scrolledUnderElevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF1F2937)),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            color: const Color(0xFF4F8CFF),
-            tooltip: 'Edit',
+          TextButton.icon(
             onPressed: () async {
               await Navigator.push(
                 context,
@@ -352,12 +349,21 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
               );
               await loadMedication();
             },
+            icon: const Icon(Icons.edit_outlined, size: 18),
+            label: const Text('Edit',
+                style: TextStyle(fontWeight: FontWeight.w600)),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF4F8CFF),
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            color: const Color(0xFFDC2626),
-            tooltip: 'Delete',
+          TextButton.icon(
             onPressed: deleteMedication,
+            icon: const Icon(Icons.delete_outline, size: 18),
+            label: const Text('Delete',
+                style: TextStyle(fontWeight: FontWeight.w600)),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFDC2626),
+            ),
           ),
         ],
       ),
@@ -551,7 +557,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
               child: Text(
                 'Details',
                 style: TextStyle(
-                  fontSize: 17,
+                  fontSize: 19,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF111827),
                 ),
