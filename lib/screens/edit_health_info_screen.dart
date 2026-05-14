@@ -292,7 +292,7 @@ class _EditHealthInfoScreenState extends State<EditHealthInfoScreen> {
       backgroundColor: const Color(0xFFF5F7FB),
       appBar: AppBar(
         title: const Text(
-          'Update Health Info',
+          'Health Info',
           style: TextStyle(
             color: Color(0xFF1F2937),
             fontWeight: FontWeight.w700,
