@@ -358,7 +358,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
         children: [
           const Text(
             'Take a photo of your medication label and let AI fill in the details automatically.',
-            style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+            style: TextStyle(fontSize: 15, color: Color(0xFF6B7280)),
           ),
           const SizedBox(height: 14),
           Row(
@@ -463,7 +463,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
                     children: [
                       const Icon(
                         Icons.access_time,
-                        size: 14,
+                        size: 18,
                         color: Color(0xFF4F8CFF),
                       ),
                       const SizedBox(width: 6),
@@ -482,7 +482,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
                         },
                         child: const Icon(
                           Icons.close,
-                          size: 14,
+                          size: 18,
                           color: Color(0xFF6B7280),
                         ),
                       ),
@@ -530,7 +530,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
             const Text(
               'Select days:',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF6B7280),
               ),
@@ -603,7 +603,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
                   ? 'Which day of the week?'
                   : 'Which day (every 2 weeks)?',
               style: const TextStyle(
-                fontSize: 13,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF6B7280),
               ),
@@ -661,8 +661,8 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
               }
             },
             child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Icon(Icons.remove, size: 18, color: Color(0xFF6B7280)),
+              padding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              child: Icon(Icons.remove, size: 22, color: Color(0xFF6B7280)),
             ),
           ),
           Container(
@@ -687,8 +687,8 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
               }
             },
             child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Icon(Icons.add, size: 18, color: Color(0xFF6B7280)),
+              padding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              child: Icon(Icons.add, size: 22, color: Color(0xFF6B7280)),
             ),
           ),
         ],
@@ -793,7 +793,7 @@ class _AddEditMedicationScreenState extends State<AddEditMedicationScreen> {
                                   const Text(
                                     'Refill Date',
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 14,
                                       color: Color(0xFF6B7280),
                                     ),
                                   ),
