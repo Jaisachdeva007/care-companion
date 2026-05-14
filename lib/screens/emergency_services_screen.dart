@@ -152,7 +152,7 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                 decoration: BoxDecoration(
                   color: isSelected ? const Color(0xFF4F8CFF) : Colors.white,
                   borderRadius: BorderRadius.circular(24),
@@ -165,7 +165,7 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
                 child: Text(
                   label,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: isSelected ? Colors.white : const Color(0xFF6B7280),
                   ),
@@ -224,7 +224,7 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
                             ? 'None found within ${_selectedRadiusKm!.toInt()} km'
                             : 'None found in your area',
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 15,
                           color: Color(0xFF9CA3AF),
                         ),
                       ),
@@ -252,7 +252,7 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
                       child: Text(
                         title,
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF6B7280),
                         ),
@@ -268,7 +268,7 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
                       child: Text(
                         '${place.distanceKm.toStringAsFixed(1)} km',
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF374151),
                         ),
@@ -308,9 +308,10 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen> {
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 13),
                     ),
-                    icon: const Icon(Icons.directions_outlined, size: 18),
+                    icon: const Icon(Icons.directions_outlined, size: 20),
                     label: const Text('Get Directions',
-                        style: TextStyle(fontWeight: FontWeight.w700)),
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 16)),
                   ),
                 ),
               ],
