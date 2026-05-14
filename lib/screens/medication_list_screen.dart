@@ -17,7 +17,6 @@ class MedicationListScreen extends StatefulWidget {
 }
 
 class _MedicationListScreenState extends State<MedicationListScreen> {
-  bool _fabExpanded = false;
 
   String formatRepeatDays(List<String> days) {
     if (days.isEmpty) return 'No repeat days';
@@ -333,7 +332,7 @@ class _MedicationListScreenState extends State<MedicationListScreen> {
           Text(
             label,
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 15,
               color: Color(0xFF6B7280),
             ),
           ),
@@ -342,93 +341,59 @@ class _MedicationListScreenState extends State<MedicationListScreen> {
     );
   }
 
-  Widget _buildExpandableFab(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        if (_fabExpanded) ...[
-          _fabOption(
-            context,
-            icon: Icons.document_scanner_outlined,
-            label: 'Add Prescription',
-            onTap: () {
-              setState(() => _fabExpanded = false);
-              Navigator.push(
+  Widget _buildAddButtons(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const AddPrescriptionScreen(),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 10),
-          _fabOption(
-            context,
-            icon: Icons.medication_outlined,
-            label: 'Add Medication',
-            onTap: () {
-              setState(() => _fabExpanded = false);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const AddEditMedicationScreen(),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 14),
-        ],
-        FloatingActionButton(
-          backgroundColor: const Color(0xFF4F8CFF),
-          foregroundColor: Colors.white,
-          onPressed: () => setState(() => _fabExpanded = !_fabExpanded),
-          child: AnimatedRotation(
-            turns: _fabExpanded ? 0.125 : 0,
-            duration: const Duration(milliseconds: 200),
-            child: const Icon(Icons.add),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _fabOption(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x1A000000),
-              blurRadius: 10,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 20, color: const Color(0xFF4F8CFF)),
-            const SizedBox(width: 10),
-            Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-                color: Color(0xFF111827),
+                    builder: (_) => const AddEditMedicationScreen()),
+              ),
+              icon: const Icon(Icons.medication_outlined, size: 22),
+              label: const Text(
+                'Add Medication',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4F8CFF),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                minimumSize: const Size.fromHeight(54),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const AddPrescriptionScreen()),
+              ),
+              icon: const Icon(Icons.document_scanner_outlined, size: 22),
+              label: const Text(
+                'Scan Prescription',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF4F8CFF),
+                side: const BorderSide(color: Color(0xFF4F8CFF)),
+                minimumSize: const Size.fromHeight(54),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -651,6 +616,7 @@ class _MedicationListScreenState extends State<MedicationListScreen> {
                                       child: Text(
                                         time,
                                         style: const TextStyle(
+                                          fontSize: 15,
                                           fontWeight: FontWeight.w600,
                                           color: Color(0xFF2354B8),
                                         ),
@@ -671,7 +637,7 @@ class _MedicationListScreenState extends State<MedicationListScreen> {
                                   child: Text(
                                     formatRepeatDays(med.repeatDays),
                                     style: const TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                       color: Color(0xFF4B5563),
                                     ),
@@ -701,7 +667,7 @@ class _MedicationListScreenState extends State<MedicationListScreen> {
                                         ? const Color(0xFF065F46)
                                         : const Color(0xFFB91C1C),
                                     fontWeight: FontWeight.w600,
-                                    fontSize: 12,
+                                    fontSize: 14,
                                   ),
                                 ),
                               ),
@@ -722,9 +688,12 @@ class _MedicationListScreenState extends State<MedicationListScreen> {
           );
         },
       ),
-      floatingActionButton: _buildExpandableFab(context),
-      bottomNavigationBar: const CustomBottomNavBar(
-        currentTab: AppTab.health,
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildAddButtons(context),
+          const CustomBottomNavBar(currentTab: AppTab.health),
+        ],
       ),
     );
   }
