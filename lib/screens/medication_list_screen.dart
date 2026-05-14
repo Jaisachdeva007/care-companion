@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -94,6 +96,7 @@ class _MedicationListScreenState extends State<MedicationListScreen> {
     String? nextName;
     DateTime? nextTime;
     String? nextDosage;
+    String? nextPhotoBase64;
 
     for (final med in medications) {
       if (med.isActive != true) continue;
@@ -111,6 +114,7 @@ class _MedicationListScreenState extends State<MedicationListScreen> {
           nextTime = candidate;
           nextName = med.name;
           nextDosage = med.dosage;
+          nextPhotoBase64 = med.photoBase64 as String? ?? '';
         }
       }
     }
@@ -121,6 +125,7 @@ class _MedicationListScreenState extends State<MedicationListScreen> {
       'name': nextName,
       'time': nextTime,
       'dosage': nextDosage ?? '',
+      'photoBase64': nextPhotoBase64 ?? '',
     };
   }
 
@@ -181,47 +186,66 @@ class _MedicationListScreenState extends State<MedicationListScreen> {
                 color: const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(18),
               ),
-              child: Column(
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Next up',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF6B7280),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    nextMedication['name'] as String,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF111827),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  if ((nextMedication['dosage'] as String).trim().isNotEmpty)
-                    Text(
-                      nextMedication['dosage'] as String,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF6B7280),
+                  if ((nextMedication['photoBase64'] as String).isNotEmpty) ...[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.memory(
+                        base64Decode(nextMedication['photoBase64'] as String),
+                        width: 64,
+                        height: 64,
+                        fit: BoxFit.cover,
                       ),
                     ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _miniPill(
-                        _formatDueIn(nextMedication['time'] as DateTime),
-                      ),
-                      _miniPill(
-                        'Next at ${_formatDisplayTime(nextMedication['time'] as DateTime)}',
-                      ),
-                    ],
+                    const SizedBox(width: 12),
+                  ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Next up',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          nextMedication['name'] as String,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF111827),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        if ((nextMedication['dosage'] as String).trim().isNotEmpty)
+                          Text(
+                            nextMedication['dosage'] as String,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF6B7280),
+                            ),
+                          ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _miniPill(
+                              _formatDueIn(nextMedication['time'] as DateTime),
+                            ),
+                            _miniPill(
+                              'Next at ${_formatDisplayTime(nextMedication['time'] as DateTime)}',
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -561,22 +585,33 @@ class _MedicationListScreenState extends State<MedicationListScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: med.isActive
-                                  ? const Color(0xFFEFF4FF)
-                                  : const Color(0xFFF3F4F6),
+                          if (med.photoBase64.isNotEmpty)
+                            ClipRRect(
                               borderRadius: BorderRadius.circular(14),
+                              child: Image.memory(
+                                base64Decode(med.photoBase64),
+                                width: 56,
+                                height: 56,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          else
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: med.isActive
+                                    ? const Color(0xFFEFF4FF)
+                                    : const Color(0xFFF3F4F6),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Icon(
+                                Icons.medication,
+                                color: med.isActive
+                                    ? const Color(0xFF4F8CFF)
+                                    : const Color(0xFF6B7280),
+                                size: 28,
+                              ),
                             ),
-                            child: Icon(
-                              Icons.medication,
-                              color: med.isActive
-                                  ? const Color(0xFF4F8CFF)
-                                  : const Color(0xFF6B7280),
-                              size: 28,
-                            ),
-                          ),
                           const SizedBox(width: 14),
                           Expanded(
                             child: Column(
