@@ -225,12 +225,12 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(Icons.phone_outlined,
-                            size: 14, color: Color(0xFF4F8CFF)),
-                        const SizedBox(width: 4),
+                            size: 18, color: Color(0xFF4F8CFF)),
+                        const SizedBox(width: 6),
                         Text(
                           senior.phone,
                           style: const TextStyle(
-                            fontSize: 14,
+                            fontSize: 16,
                             color: Color(0xFF4F8CFF),
                             fontWeight: FontWeight.w600,
                           ),
@@ -249,7 +249,7 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
 
   Widget _chip(IconData icon, String label) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
         color: const Color(0xFFF3F4F6),
         borderRadius: BorderRadius.circular(30),
@@ -257,12 +257,12 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color: const Color(0xFF4B5563)),
-          const SizedBox(width: 4),
+          Icon(icon, size: 16, color: const Color(0xFF4B5563)),
+          const SizedBox(width: 5),
           Text(
             label,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 14,
               fontWeight: FontWeight.w600,
               color: Color(0xFF374151),
             ),
@@ -279,7 +279,7 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
   }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -297,19 +297,19 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
         children: [
           Row(
             children: [
-              Icon(icon, size: 20, color: const Color(0xFF4F8CFF)),
-              const SizedBox(width: 8),
+              Icon(icon, size: 22, color: const Color(0xFF4F8CFF)),
+              const SizedBox(width: 10),
               Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF111827),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           ...children,
         ],
       ),
@@ -318,16 +318,16 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
 
   Widget _infoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 130,
+            width: 140,
             child: Text(
               label,
               style: const TextStyle(
-                fontSize: 13,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF6B7280),
               ),
@@ -337,7 +337,7 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
             child: Text(
               value,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF111827),
               ),
@@ -386,7 +386,7 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
               if (adherencePct != null)
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
+                      horizontal: 12, vertical: 5),
                   decoration: BoxDecoration(
                     color: _adherenceColor(adherencePct)
                         .withValues(alpha: 0.12),
@@ -396,7 +396,7 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
                     '$adherencePct%',
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
-                      fontSize: 13,
+                      fontSize: 15,
                       color: _adherenceColor(adherencePct),
                     ),
                   ),
@@ -413,7 +413,7 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
           ),
           const SizedBox(height: 16),
           SizedBox(
-            height: 120,
+            height: 160,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: adherence.entries.map((entry) {
@@ -433,16 +433,16 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
                           Text(
                             '$total',
                             style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
                               color: Color(0xFF6B7280),
                             ),
                           ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 4),
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(6),
                           child: SizedBox(
-                            height: 90 * barFraction + (total > 0 ? 6 : 2),
+                            height: 110 * barFraction + (total > 0 ? 8 : 4),
                             child: total == 0
                                 ? Container(
                                     height: 4,
@@ -468,13 +468,13 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
                                   ),
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 6),
                         Text(
                           entry.key,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                            fontSize: 9,
-                            color: Color(0xFF9CA3AF),
+                            fontSize: 13,
+                            color: Color(0xFF6B7280),
                           ),
                         ),
                       ],
@@ -499,14 +499,14 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
     return Row(
       children: [
         Container(
-          width: 10,
-          height: 10,
+          width: 13,
+          height: 13,
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: 6),
         Text(
           label,
-          style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+          style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
         ),
       ],
     );
@@ -534,12 +534,12 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
           const Row(
             children: [
               Icon(Icons.medication_outlined,
-                  size: 20, color: Color(0xFF4F8CFF)),
-              SizedBox(width: 8),
+                  size: 22, color: Color(0xFF4F8CFF)),
+              SizedBox(width: 10),
               Text(
                 'Medications',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF111827),
                 ),
@@ -610,7 +610,7 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
             ),
             child: Icon(
               Icons.medication_outlined,
-              size: 18,
+              size: 22,
               color:
                   med.isActive ? const Color(0xFF16A34A) : const Color(0xFF9CA3AF),
             ),
@@ -623,16 +623,16 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
                 Text(
                   med.name,
                   style: const TextStyle(
-                    fontSize: 15,
+                    fontSize: 17,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF111827),
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   med.dosage,
                   style: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 15,
                     color: Color(0xFF6B7280),
                   ),
                 ),
@@ -640,7 +640,7 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
                   Text(
                     med.scheduleTimes.join(' · '),
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 14,
                       color: Color(0xFF9CA3AF),
                     ),
                   ),
@@ -658,7 +658,7 @@ class _SeniorDetailScreenState extends State<SeniorDetailScreen> {
             child: Text(
               med.isActive ? 'Active' : 'Inactive',
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: FontWeight.w700,
                 color: med.isActive
                     ? const Color(0xFF16A34A)
