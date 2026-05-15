@@ -857,153 +857,113 @@ class _HomeScreenState extends State<HomeScreen> {
     final importantInfo = (userData['importantInfo'] ?? '').toString().trim();
     final importantDisplay = importantInfo.isEmpty ? conditions : importantInfo;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '${_getGreeting()}, $displayName',
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w800,
-            color: Color(0xFF111827),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0F000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
           ),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF1C2E5A), Color(0xFF0A1628)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${_getGreeting()}, $displayName',
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF111827),
             ),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x501C2E5A),
-                blurRadius: 24,
-                offset: Offset(0, 10),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Container(
+                height: 58,
+                width: 58,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF4FF),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Icon(
+                  Icons.person_rounded,
+                  size: 30,
+                  color: Color(0xFF4F8CFF),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayName,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _buildChip(
+                          icon: Icons.badge_outlined,
+                          label: _formatRole(role),
+                        ),
+                        _buildChip(
+                          icon: Icons.bloodtype_outlined,
+                          label: bloodGroup.isEmpty ? 'Not added' : bloodGroup,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const EditHealthInfoScreen()),
+                ),
+                icon: const Icon(Icons.edit_outlined,
+                    color: Color(0xFF6B7280)),
               ),
             ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(22),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header row: MEDICAL ID label + edit button
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text(
-                        'MEDICAL ID',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const EditHealthInfoScreen()),
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.edit_outlined,
-                            color: Colors.white, size: 18),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                // Name + blood group badge
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        displayName,
-                        style: const TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        bloodGroup.isEmpty ? '?' : bloodGroup,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF0A1628),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Senior',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white.withValues(alpha: 0.75),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Divider(
-                    color: Colors.white.withValues(alpha: 0.2), height: 1),
-                const SizedBox(height: 18),
-                // Info rows
-                _buildCardInfoRow(
-                  icon: Icons.call_outlined,
-                  label: 'EMERGENCY CONTACT',
-                  value: emergencyContact,
-                  onTap: emergencyPhone.isNotEmpty
-                      ? () =>
-                          launchUrl(Uri(scheme: 'tel', path: emergencyPhone))
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                _buildCardInfoRow(
-                  icon: Icons.warning_amber_rounded,
-                  label: 'ALLERGIES',
-                  value: allergies,
-                ),
-                const SizedBox(height: 16),
-                _buildCardInfoRow(
-                  icon: Icons.health_and_safety_outlined,
-                  label: 'IMPORTANT INFO',
-                  value: importantDisplay,
-                ),
-              ],
-            ),
+          const SizedBox(height: 18),
+          _buildSoftInfoTile(
+            icon: Icons.call_outlined,
+            title: 'Emergency Contact',
+            value: emergencyContact,
+            onTap: emergencyPhone.isNotEmpty
+                ? () => launchUrl(Uri(scheme: 'tel', path: emergencyPhone))
+                : null,
           ),
-        ),
-      ],
+          const SizedBox(height: 10),
+          _buildSoftInfoTile(
+            icon: Icons.warning_amber_rounded,
+            title: 'Allergies',
+            value: allergies,
+          ),
+          const SizedBox(height: 10),
+          _buildSoftInfoTile(
+            icon: Icons.health_and_safety_outlined,
+            title: 'Important Info',
+            value: importantDisplay,
+          ),
+        ],
+      ),
     );
   }
 
