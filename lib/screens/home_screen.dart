@@ -1074,6 +1074,55 @@ class _HomeScreenState extends State<HomeScreen> {
     return tile;
   }
 
+  Widget _buildCardInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    VoidCallback? onTap,
+  }) {
+    final row = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 20, color: Colors.white.withValues(alpha: 0.85)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.65),
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.4,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                value.isEmpty ? 'Not added' : value,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (onTap != null)
+          Icon(Icons.call_made_rounded,
+              size: 16, color: Colors.white.withValues(alpha: 0.7)),
+      ],
+    );
+
+    if (onTap != null) {
+      return GestureDetector(onTap: onTap, child: row);
+    }
+    return row;
+  }
+
   Widget _buildCheckOnMeCard({
     required String uid,
     required Map<String, dynamic> userData,
