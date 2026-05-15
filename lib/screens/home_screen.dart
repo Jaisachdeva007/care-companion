@@ -873,14 +873,14 @@ class _HomeScreenState extends State<HomeScreen> {
           width: double.infinity,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF4F8CFF), Color(0xFF1A3A8F)],
+              colors: [Color(0xFF1C2E5A), Color(0xFF0A1628)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(24),
             boxShadow: const [
               BoxShadow(
-                color: Color(0x404F8CFF),
+                color: Color(0x501C2E5A),
                 blurRadius: 24,
                 offset: Offset(0, 10),
               ),
@@ -958,7 +958,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF1A3A8F),
+                          color: Color(0xFF0A1628),
                         ),
                       ),
                     ),
